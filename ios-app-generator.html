@@ -1,0 +1,3083 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; connect-src https:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iOS App Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+          integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
+          crossorigin="anonymous" defer></script>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --primary: #0071e3;
+      --primary-hover: #0077ED;
+      --text: #1d1d1f;
+      --text2: #6e6e73;
+      --border: #d2d2d7;
+      --danger: #ff3b30;
+      --success: #34c759;
+      --warning: #ff9500;
+      --code-bg: #1e1e1e;
+      --code-text: #d4d4d4;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 0 32px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span {
+      background: linear-gradient(135deg, var(--primary), #6c5ce7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text2);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h2 .icon {
+      font-size: 1.2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: var(--bg);
+      transition: border-color .2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .stage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stage-item {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color .2s, box-shadow .2s;
+      position: relative;
+    }
+
+    .stage-item.dragging {
+      opacity: 0.5;
+    }
+
+    .stage-item.drag-over {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--text2);
+      font-size: 1.2rem;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .stage-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+
+    .stage-badge {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      background: #e8f0fe;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .stage-badge.custom {
+      background: #fff3e0;
+      color: var(--warning);
+    }
+
+    .stage-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .stage-actions button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text2);
+      transition: background .15s;
+    }
+
+    .stage-actions button:hover {
+      background: var(--border);
+    }
+
+    .stage-actions button.delete-btn:hover {
+      background: #ffe5e5;
+      color: var(--danger);
+    }
+
+    .stage-body {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding-left: 30px;
+    }
+
+    .stage-body label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .stage-body select {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      background: white;
+      min-width: 220px;
+    }
+
+    .stage-body select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .stage-desc {
+      font-size: 0.82rem;
+      color: var(--text2);
+      padding-left: 30px;
+    }
+
+    .stage-desc-input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 48px;
+    }
+
+    .stage-desc-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .add-stage-bar {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .add-stage-bar input {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      background: white;
+    }
+
+    .add-stage-bar input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color .2s, transform .2s, border-color .2s, color .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      background: var(--border);
+      color: var(--text2);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-danger {
+      background: #ffe5e5;
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: #ffd0d0;
+    }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 0.82rem;
+    }
+
+    .btn-block {
+      width: 100%;
+      justify-content: center;
+      padding: 14px;
+      font-size: 1rem;
+    }
+
+    .generate-section {
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .progress-section {
+      display: none;
+    }
+
+    .progress-section.active {
+      display: block;
+    }
+
+    .stage-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stage-progress:last-child {
+      border-bottom: none;
+    }
+
+    .stage-progress .status-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .stage-progress .stage-label {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .stage-progress .stage-time {
+      font-size: 0.8rem;
+      color: var(--text2);
+    }
+
+    .stage-progress .retry-btn {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      margin-left: 8px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .output-area {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .output-area .stage-marker {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .output-area .file-marker {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .output-area .error-text {
+      color: var(--danger);
+    }
+
+    .file-tree {
+      margin-top: 12px;
+    }
+
+    .file-tree-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .file-tree-item:hover {
+      background: var(--bg);
+    }
+
+    .file-tree-item .ft-icon {
+      font-size: 0.9rem;
+    }
+
+    .file-tree-item .ft-name {
+      flex: 1;
+    }
+
+    .file-tree-item .ft-size {
+      font-size: 0.75rem;
+      color: var(--text2);
+    }
+
+    .download-section {
+      display: none;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .download-section.active {
+      display: block;
+    }
+
+    .download-section .file-count {
+      font-size: 0.9rem;
+      color: var(--text2);
+      margin-bottom: 12px;
+    }
+
+    .settings-toggle {
+      font-size: 0.85rem;
+      color: var(--primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .settings-toggle:hover {
+      text-decoration: underline;
+    }
+
+    .settings-content {
+      display: none;
+    }
+
+    .settings-content.open {
+      display: block;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal h3 {
+      margin-bottom: 16px;
+    }
+
+    .modal .form-group {
+      margin-bottom: 12px;
+    }
+
+    .modal .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .insert-select {
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    .checkbox-row,
+    .checkbox-col {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-col {
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 4px 0;
+      user-select: none;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    @media (max-width:640px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>&#xF8FF; <span>iOS App Generator</span></h1>
+      <p>輸入 App 資訊，AI 自動產生完整 Xcode 專案</p>
+    </header>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="settings-toggle" onclick="toggleSettings()">&#9881; 進階設定 <span id="settingsArrow">&#9654;</span></div>
+      <div class="settings-content" id="settingsContent">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="請輸入 API Key">
+          </div>
+          <div class="form-group">
+            <label>API Base URL</label>
+            <input type="text" id="apiBase" value="https://api.mixroute.ai/v1">
+          </div>
+          <div class="form-group">
+            <label>Temperature (0-1)</label>
+            <input type="number" id="temperature" value="0.4" min="0" max="1" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Max Tokens / Stage</label>
+            <input type="number" id="maxTokens" value="16384" min="1024" max="65536" step="1024">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Configuration -->
+    <div class="card">
+      <h2><span class="icon">&#128241;</span> App 設定</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>App 名稱（顯示名稱）</label>
+          <input type="text" id="appName" placeholder="我的 App" oninput="updateModuleName()">
+        </div>
+        <div class="form-group">
+          <label>Swift 模組名稱（英文，用於程式碼）</label>
+          <input type="text" id="moduleName" placeholder="MyAwesomeApp" oninput="validateModuleName()">
+          <div id="moduleNameHint" style="font-size:0.75rem;color:var(--text2);"></div>
+        </div>
+        <div class="form-group">
+          <label>Bundle ID</label>
+          <input type="text" id="bundleId" placeholder="com.example.myapp">
+        </div>
+        <div class="form-group">
+          <label>最低 iOS 版本</label>
+          <select id="minIOS">
+            <option value="11.0">iOS 11.0</option>
+            <option value="12.0">iOS 12.0</option>
+            <option value="13.0">iOS 13.0</option>
+            <option value="14.0">iOS 14.0</option>
+            <option value="15.0">iOS 15.0</option>
+            <option value="16.0" selected>iOS 16.0</option>
+            <option value="17.0">iOS 17.0</option>
+            <option value="18.0">iOS 18.0</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Supported Destinations</label>
+          <div class="checkbox-row" id="destinationsRow">
+            <label class="checkbox-label"><input type="checkbox" value="iphone" checked> iPhone</label>
+            <label class="checkbox-label"><input type="checkbox" value="ipad"> iPad</label>
+            <label class="checkbox-label"><input type="checkbox" value="mac-catalyst"> Mac (Catalyst)</label>
+            <label class="checkbox-label"><input type="checkbox" value="vision"> Apple Vision</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>iPhone Orientation</label>
+          <div class="checkbox-col" id="iphoneOrientations">
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationPortrait" checked>
+              Portrait</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationLandscapeLeft"> Landscape
+              Left</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationLandscapeRight"> Landscape
+              Right</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationPortraitUpsideDown">
+              Upside Down</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>iPad Orientation</label>
+          <div class="checkbox-col" id="ipadOrientations">
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationPortrait">
+              Portrait</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationLandscapeLeft">
+              Landscape Left</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationLandscapeRight">
+              Landscape Right</label>
+            <label class="checkbox-label"><input type="checkbox" value="UIInterfaceOrientationPortraitUpsideDown">
+              Upside Down</label>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>核心功能描述</label>
+          <textarea id="appFeatures" placeholder="描述你的 App 核心功能，例如：一個待辦事項管理 App，支援分類、提醒、iCloud 同步..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Development Stages -->
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+        <h2 style="margin-bottom:0;flex:1;"><span class="icon">&#128736;</span> 開發階段</h2>
+        <button class="btn btn-secondary btn-sm" onclick="exportStages()" style="font-size:0.78rem;" title="匯出階段設定為 JSON 檔案">&#128229; 匯出</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stageImportInput').click()" style="font-size:0.78rem;" title="從 JSON 檔案匯入階段設定">&#128228; 匯入</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetStages()" style="font-size:0.78rem;">↺ 重置為預設</button>
+        <input type="file" id="stageImportInput" accept="application/json,.json" style="display:none;" onchange="importStages(event)">
+      </div>
+      <div class="stage-list" id="stageList"></div>
+      <div class="add-stage-bar">
+        <input type="text" id="newStageName" placeholder="輸入自定義階段名稱...">
+        <button class="btn btn-secondary btn-sm" onclick="openAddStageModal()">+ 新增階段</button>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <div class="generate-section">
+      <button class="btn btn-primary btn-block" id="generateBtn" onclick="startGeneration()">&#127881; 開始產生 iOS
+        App</button>
+      <button class="btn btn-danger btn-block" id="stopBtn" style="display:none" onclick="stopGeneration()">&#9632;
+        停止產生</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="card progress-section" id="progressSection">
+      <h2><span class="icon">&#9881;</span> 產生進度</h2>
+      <div id="progressList"></div>
+      <div class="output-area" id="outputArea"></div>
+    </div>
+
+    <!-- File Preview -->
+    <div class="card progress-section" id="filePreviewSection">
+      <h2><span class="icon">&#128193;</span> 產生的檔案</h2>
+      <div class="file-tree" id="fileTree"></div>
+    </div>
+
+    <!-- Download -->
+    <div class="card download-section" id="downloadSection">
+      <h2>&#127881; App 專案產生完成！</h2>
+      <div class="file-count" id="fileCount"></div>
+      <button class="btn btn-primary btn-block" onclick="downloadProject()">&#128230; 下載 Xcode 專案 (.zip)</button>
+    </div>
+  </div>
+
+  <!-- Add Stage Modal -->
+  <div class="modal-overlay" id="addStageModal">
+    <div class="modal">
+      <h3>新增自定義開發階段</h3>
+      <div class="form-group">
+        <label>階段名稱</label>
+        <input type="text" id="modalStageName" placeholder="例如：單元測試撰寫">
+      </div>
+      <div class="form-group">
+        <label>階段描述 / AI 指令</label>
+        <textarea class="stage-desc-input" id="modalStageDesc" placeholder="描述這個階段要做什麼，AI 會根據此描述產生對應的程式碼..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>插入位置</label>
+        <select class="insert-select" id="modalInsertPos"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-sm" onclick="closeAddStageModal()">取消</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmAddStage()">新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Preview Modal -->
+  <div class="modal-overlay" id="fileModal">
+    <div class="modal" style="max-width:720px;max-height:80vh;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 id="fileModalTitle" style="font-size:0.95rem;"></h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeFileModal()">&#10005;</button>
+      </div>
+      <div class="output-area" id="fileModalContent" style="flex:1;max-height:60vh;"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== STATE =====
+    const MODELS = [
+      { id: 'claude-opus-5-5', name: 'Claude Opus 5.5', group: 'Anthropic', noTemperature: true },
+      { id: 'claude-opus-5', name: 'Claude Opus 5', group: 'Anthropic', noTemperature: true },
+      { id: 'claude-fable-5-1', name: 'Claude Fable 5.1', group: 'Anthropic', noTemperature: true },
+      { id: 'claude-fable-5', name: 'Claude Fable 5', group: 'Anthropic' },
+      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', group: 'Anthropic' },
+      { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', group: 'Anthropic' },
+      { id: 'gpt-6-astra', name: 'GPT-6 Astra', group: 'OpenAI' },
+      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', group: 'OpenAI' },
+      { id: 'gpt-6-sol', name: 'GPT-6 Sol', group: 'OpenAI' },
+      { id: 'gpt-6-luna', name: 'GPT-6 Luna', group: 'OpenAI' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', group: 'OpenAI' },
+      { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', group: 'OpenAI' },
+      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', group: 'OpenAI' },
+      { id: 'gpt-chat-latest', name: 'GPT Chat Latest', group: 'OpenAI' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', group: 'OpenAI' },
+      { id: 'gpt-5.4', name: 'GPT-5.4', group: 'OpenAI' },
+      { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', group: 'Google' },
+      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', group: 'Google' },
+      { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', group: 'Google', noTemperature: true },
+      { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash-Lite', group: 'Google' },
+      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', group: 'Google' },
+      { id: 'grok-4.7', name: 'Grok 4.7', group: 'xAI' },
+      { id: 'grok-4.6', name: 'Grok 4.6', group: 'xAI' },
+      { id: 'grok-4.5', name: 'Grok 4.5', group: 'xAI' },
+      { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', group: 'xAI' },
+      { id: 'grok-4.3', name: 'Grok 4.3', group: 'xAI' },
+      { id: 'grok-code-fast-1', name: 'Grok Build 0.1', group: 'xAI' },
+      { id: 'deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash', group: 'DeepSeek' },
+      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', group: 'DeepSeek' },
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', group: 'DeepSeek' },
+      { id: 'deepseek-v4-flash-vision-exp', name: 'DeepSeek V4 Flash Vision Exp', group: 'DeepSeek' },
+      { id: 'deepseek-v3.2-speciale', name: 'DeepSeek V3.2 Speciale', group: 'DeepSeek' },
+      { id: 'deepseek-v3.1', name: 'DeepSeek V3.1', group: 'DeepSeek' },
+      { id: 'glm-5.3', name: 'GLM-5.3', group: 'Zhipu' },
+      { id: 'glm-5.3-flashx', name: 'GLM-5.3 FlashX', group: 'Zhipu' },
+      { id: 'glm-5.3-flash', name: 'GLM-5.3 Flash', group: 'Zhipu' },
+      { id: 'glm-5.1', name: 'GLM-5.1', group: 'Zhipu' },
+      { id: 'glm-5-turbo', name: 'GLM-5 Turbo', group: 'Zhipu' },
+      { id: 'glm-5', name: 'GLM-5', group: 'Zhipu' },
+      { id: 'glm-4.7-flashx', name: 'GLM-4.7 FlashX', group: 'Zhipu' },
+      { id: 'qwen3.8-max', name: 'Qwen 3.8 Max', group: 'Alibaba' },
+      { id: 'kimi-k3', name: 'Kimi K3', group: 'Moonshot' },
+      { id: 'kimi-k2.7-code', name: 'Kimi K2.7 Code', group: 'Moonshot' },
+      { id: 'kimi-k2.6', name: 'Kimi K2.6', group: 'Moonshot' },
+      { id: 'kimi-k2.5', name: 'Kimi K2.5', group: 'Moonshot' },
+      { id: 'MiniMax-M3', name: 'MiniMax M3', group: 'MiniMax' },
+      { id: 'MiniMax-M2.7', name: 'MiniMax M2.7', group: 'MiniMax' },
+      { id: 'MiniMax-M2.5', name: 'MiniMax M2.5', group: 'MiniMax' },
+      { id: 'mimo-v2.5-pro', name: 'MiMo V2.5 Pro', group: 'Xiaomi' },
+      { id: 'hy4-preview', name: 'Hy4 Preview', group: 'Tencent' },
+      { id: 'hy3', name: 'Hy3', group: 'Tencent' },
+      { id: 'command-a-plus-05-2026', name: 'Command A+', group: 'Cohere' },
+      { id: 'command-a-03-2025', name: 'Command A', group: 'Cohere' },
+      { id: 'llama-4-maverick-17b-128e-instruct-fp8', name: 'Llama 4 Maverick FP8', group: 'Meta' },
+      { id: 'llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout', group: 'Meta' },
+      { id: 'llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct', group: 'Meta' },
+    ];
+    const DEFAULT_MODEL = 'claude-sonnet-5';
+
+    // iOS API 最低版本對照表：regex 命中代表該 API 需要 minIOS >= 指定版本
+    // 用於 deterministic scan，補 LLM 自檢的盲點
+    const IOS_API_MIN_VERSION = [
+      // iOS 14+
+      { pattern: /@StateObject\b/, minIOS: 14, replace: '@ObservedObject + 在父層建立實例' },
+      { pattern: /@SceneStorage\b/, minIOS: 14 },
+      { pattern: /\bLazyVStack\b/, minIOS: 14, replace: 'VStack' },
+      { pattern: /\bLazyHStack\b/, minIOS: 14, replace: 'HStack' },
+      { pattern: /\bLazyVGrid\b/, minIOS: 14, replace: '手動排版的 VStack' },
+      { pattern: /\bLazyHGrid\b/, minIOS: 14, replace: '手動排版的 HStack' },
+      { pattern: /\bProgressView\b/, minIOS: 14, replace: 'UIActivityIndicatorView (UIViewRepresentable)' },
+      { pattern: /\bScrollViewReader\b/, minIOS: 14 },
+      // iOS 15+
+      { pattern: /\bAsyncImage\b/, minIOS: 15, replace: '自寫 URLSession + UIImage' },
+      { pattern: /\.searchable\s*\(/, minIOS: 15, replace: '手動 TextField + onChange 過濾' },
+      { pattern: /\.refreshable\s*\(/, minIOS: 15, replace: 'UIRefreshControl 橋接' },
+      { pattern: /\.task\s*[\({]/, minIOS: 15, replace: '.onAppear { Task { await ... } }' },
+      { pattern: /\.swipeActions\s*[\({]/, minIOS: 15, replace: 'List.onDelete / 自訂 gesture' },
+      { pattern: /\.confirmationDialog\s*\(/, minIOS: 15, replace: '.actionSheet' },
+      { pattern: /@FocusState\b/, minIOS: 15 },
+      { pattern: /\bFocusState\b/, minIOS: 15 },
+      { pattern: /\.ultraThinMaterial\b|\.thinMaterial\b|\.regularMaterial\b|\.thickMaterial\b|\.ultraThickMaterial\b/, minIOS: 15, replace: '使用半透明 Color.black.opacity(...)' },
+      { pattern: /\.tint\s*\(/, minIOS: 15, replace: '.accentColor' },
+      { pattern: /\.badge\s*\(/, minIOS: 15 },
+      { pattern: /\bAttributedString\b/, minIOS: 15, replace: 'NSAttributedString' },
+      { pattern: /\bTimelineView\b/, minIOS: 15 },
+      { pattern: /\bCanvas\s*\{/, minIOS: 15 },
+      // iOS 16+
+      { pattern: /\bNavigationStack\b/, minIOS: 16, replace: 'NavigationView（iOS 15 以下）' },
+      { pattern: /\bNavigationSplitView\b/, minIOS: 16, replace: 'NavigationView' },
+      { pattern: /\.navigationDestination\s*\(/, minIOS: 16, replace: 'NavigationLink(destination:)' },
+      { pattern: /\bShareLink\b/, minIOS: 16, replace: 'UIActivityViewController 橋接' },
+      { pattern: /\bPhotosPicker\b/, minIOS: 16, replace: 'UIImagePickerController 橋接' },
+      { pattern: /\bViewThatFits\b/, minIOS: 16, replace: 'GeometryReader 手動切換' },
+      { pattern: /\bAnyLayout\b/, minIOS: 16 },
+      { pattern: /\bGauge\b/, minIOS: 16, replace: 'ProgressView 或自訂 Shape' },
+      { pattern: /\bGrid\s*\{/, minIOS: 16, replace: 'VStack + HStack 組合' },
+      { pattern: /\bGridRow\b/, minIOS: 16 },
+      { pattern: /\.contentTransition\s*\(/, minIOS: 16 },
+      { pattern: /\bChart\s*\{/, minIOS: 16, replace: '自訂 Path / Canvas' },
+      { pattern: /import\s+Charts\b/, minIOS: 16 },
+      { pattern: /\.scrollContentBackground\s*\(/, minIOS: 16 },
+      { pattern: /\.scrollDismissesKeyboard\s*\(/, minIOS: 16 },
+      { pattern: /\bMultiDatePicker\b/, minIOS: 16 },
+      // iOS 17+
+      { pattern: /@Observable\b(?!Object)/, minIOS: 17, replace: 'class 繼承 ObservableObject + @Published' },
+      { pattern: /#Preview\b/, minIOS: 17, replace: 'struct _Previews: PreviewProvider { static var previews... }' },
+      { pattern: /@Bindable\b/, minIOS: 17, replace: '@ObservedObject + $binding' },
+      { pattern: /import\s+SwiftData\b/, minIOS: 17, replace: 'CoreData' },
+      { pattern: /@Model\b/, minIOS: 17, replace: 'NSManagedObject (CoreData)' },
+      { pattern: /@Query\b/, minIOS: 17, replace: 'NSFetchRequest (CoreData)' },
+      { pattern: /\bModelContainer\b/, minIOS: 17 },
+      { pattern: /\bModelContext\b/, minIOS: 17 },
+      { pattern: /\bTipKit\b|import\s+TipKit\b/, minIOS: 17 },
+      { pattern: /\.inspector\s*\(/, minIOS: 17 },
+      { pattern: /\.scrollPosition\s*\(/, minIOS: 17 },
+      { pattern: /#unavailable\b/, minIOS: 17, replace: 'if #available 反向判斷' },
+      { pattern: /\bContentUnavailableView\b/, minIOS: 17, replace: '自訂空狀態 View' },
+      // iOS 18+
+      { pattern: /@Entry\b/, minIOS: 18 },
+      { pattern: /\bMeshGradient\b/, minIOS: 18 },
+      { pattern: /\.symbolEffect\s*\(/, minIOS: 17 },
+    ];
+
+    const DEFAULT_STAGES = [
+      {
+        id: 'stage-1', name: '第一階段：需求與架構定義', model: DEFAULT_MODEL,
+        builtin: true,
+        description: '定義專案架構、資料模型、導航結構，產生 App 入口點及所有基礎檔案。',
+        prompt: `You are a senior iOS/Swift developer. Define the COMPLETE architecture for an iOS app and generate ALL foundational files.
+
+⚠️ ABSOLUTELY CRITICAL: Read the "MINIMUM iOS DEPLOYMENT TARGET" and the "FORBIDDEN APIs" / "ALLOWED APIs" sections in the app context below VERY CAREFULLY. You MUST ONLY use APIs available in the specified minimum iOS version. Using ANY API from a newer iOS version will cause compilation errors. Do NOT use if #available or @available to work around this — only use APIs natively available at the minimum deployment target.
+
+REQUIREMENTS:
+1. Choose the correct UI framework based on the minimum iOS version (UIKit for iOS <13, SwiftUI for iOS 13+).
+2. Create the correct entry point for the iOS version (AppDelegate for <14, @main App for 14+).
+3. Define ALL data models with Codable conformance.
+4. Define ALL protocols and service interfaces.
+5. Create navigation structure appropriate for the iOS version.
+6. Create placeholder Views and ViewModels that will be fully implemented in the next stage.
+7. Include a Settings/About view.
+8. Ensure the app structure is COMPLETE - every view referenced must exist as a file.
+
+The app MUST be fully compilable even at this stage (placeholder implementations are fine).
+Generate ALL files needed. Do not leave any file for later.`
+      },
+      {
+        id: 'stage-2', name: '第二階段：核心商業邏輯功能', model: DEFAULT_MODEL,
+        builtin: true,
+        description: '實作完整的商業邏輯、ViewModel、View、Service，確保所有功能可用。',
+        prompt: `You are a senior iOS/Swift developer. Based on the architecture from Stage 1, implement ALL core business logic and fully functional views.
+
+⚠️ ABSOLUTELY CRITICAL: Read the "MINIMUM iOS DEPLOYMENT TARGET" and the "FORBIDDEN APIs" / "ALLOWED APIs" sections in the app context below VERY CAREFULLY. You MUST ONLY use APIs available in the specified minimum iOS version. Using ANY API from a newer iOS version will cause compilation errors. Do NOT use if #available or @available to work around this.
+
+REQUIREMENTS:
+1. Implement ALL ViewModels with complete business logic, state management, and data flow.
+2. Implement ALL Views with proper layouts, lists, forms, navigation, and user interactions.
+3. Implement ALL Services (data persistence, networking if needed) using APIs available in the target iOS version.
+4. Add proper state management appropriate for the iOS version.
+5. Implement CRUD operations for all data models.
+6. Add search, filter, sort functionality where appropriate.
+7. Ensure the app has enough features to be considered a COMPLETE, functional app suitable for the App Store.
+8. All views must be connected and navigable - no dead ends.
+
+Replace ALL placeholder implementations from Stage 1 with real, working code.`
+      },
+      {
+        id: 'stage-3', name: '第三階段：打磨與上架準備 UI 細節調整', model: DEFAULT_MODEL,
+        builtin: true,
+        description: 'UI 細節打磨、動畫、錯誤處理、無障礙支援、深色模式、App Store 上架準備。',
+        prompt: `You are a senior iOS/Swift developer and UI/UX expert. Polish the app for App Store submission.
+
+⚠️ ABSOLUTELY CRITICAL: Read the "MINIMUM iOS DEPLOYMENT TARGET" and the "FORBIDDEN APIs" / "ALLOWED APIs" sections in the app context below VERY CAREFULLY. You MUST ONLY use APIs available in the specified minimum iOS version. Do NOT introduce any API that requires a newer iOS version. Do NOT use if #available or @available to work around this.
+
+REQUIREMENTS:
+1. Refine ALL views with proper styling: consistent colors, spacing, typography.
+2. Add meaningful animations and transitions appropriate for the target iOS version.
+3. Add comprehensive error handling: alerts, empty states, loading indicators.
+4. Ensure Dark Mode support (iOS 13+) or proper appearance handling.
+5. Add basic accessibility labels on interactive elements.
+6. Add onboarding/welcome screen if appropriate for the app type.
+7. Ensure the app meets Apple's minimum App Store requirements:
+   - Has substantial functionality (not a trivial app)
+   - Professional UI quality
+   - Proper error handling
+   - No placeholder content
+8. Add any missing features that would make this a complete, polished app.
+9. Output ONLY files that you are modifying or adding - do not re-output unchanged files.
+10. DOUBLE-CHECK every API, modifier, and view you use is available in the minimum iOS deployment target.
+11. Generate an App Icon design specification. Output a special block in this EXACT format (this is NOT a Swift file, output it separately from your code files):
+
+// ===== APP_ICON_SPEC =====
+{
+  "backgroundColors": ["#HEX1", "#HEX2"],
+  "emoji": "SINGLE_EMOJI",
+  "foregroundColor": "#HEX"
+}
+// ===== END APP_ICON_SPEC =====
+
+Rules for the icon spec:
+- "backgroundColors": an array of exactly 2 hex colors for a linear gradient background. Choose colors that match the app's theme and look professional.
+- "emoji": a single emoji that best represents the app's core functionality (e.g. "📝" for notes, "🎵" for music, "📷" for camera).
+- "foregroundColor": a hex color for a subtle shadow/glow effect behind the emoji. Usually a darker shade of the background.
+- Make the icon visually appealing and representative of the app's purpose.`
+      },
+      {
+        id: 'stage-4', name: '第四階段：編譯檢查與錯誤修正', model: DEFAULT_MODEL,
+        builtin: true,
+        description: '逐一審查所有檔案，找出並修正所有會導致編譯錯誤的問題。',
+        prompt: `You are an expert Swift compiler and iOS code reviewer. Your SOLE job is to review ALL generated files and fix ANY issue that would cause a compilation error.
+
+⚠️ ABSOLUTELY CRITICAL: Read the "MINIMUM iOS DEPLOYMENT TARGET" and the "FORBIDDEN APIs" / "ALLOWED APIs" sections in the app context below. This is the #1 source of compilation errors.
+
+REVIEW CHECKLIST — go through EVERY file and check for:
+
+1. **iOS VERSION VIOLATIONS** (most common cause of errors):
+   - Any SwiftUI view, modifier, or property wrapper not available in the target iOS version
+   - NavigationStack (iOS 16+), .searchable (iOS 15+), @StateObject (iOS 14+), @Observable (iOS 17+), #Preview (iOS 17+), etc.
+   - Replace violations with the correct equivalent for the target version
+
+2. **MISSING IMPORTS**: Every file must import the correct modules (SwiftUI, UIKit, Foundation, Combine, etc.)
+
+3. **UNDEFINED REFERENCES**:
+   - Every type, struct, class, enum, protocol used must be defined somewhere in the project
+   - Every view referenced in navigation must exist as a file
+   - Every property/method called must exist on the type
+
+4. **TYPE MISMATCHES**:
+   - @StateObject vs @ObservedObject usage
+   - Binding types matching
+   - Return types matching protocol requirements
+   - ForEach requiring Identifiable or id: parameter
+
+5. **STRUCTURAL ISSUES**:
+   - Missing required protocol conformances (Identifiable, Hashable, Codable)
+   - Missing required initializers
+   - Duplicate type definitions across files
+   - Circular dependencies
+
+6. **SWIFTUI SPECIFICS**:
+   - body property must return exactly one View (use Group{} or VStack{} to wrap multiple)
+   - @main attribute on exactly ONE App struct (iOS 14+) or @UIApplicationMain on ONE AppDelegate (iOS <14)
+   - PreviewProvider (iOS 13-16) vs #Preview macro (iOS 17+)
+
+7. **ENTRY POINT**: Verify exactly one entry point exists and matches the iOS version.
+
+OUTPUT RULES:
+- Output ONLY files that you are FIXING — do not re-output files that have no errors.
+- If ALL files are correct, output a single comment: // All files compile correctly, no changes needed.
+- For each fix, add a brief comment at the top of the file: // Fixed: [description of what was wrong]`
+      }
+    ];
+
+    let stages = [];
+    let generatedFiles = {};
+    let appIconSpec = null;
+    let abortController = null;
+    let isGenerating = false;
+
+    // ===== MODULE NAME HELPERS =====
+    function getModuleName() {
+      const moduleInput = document.getElementById('moduleName').value.trim();
+      if (moduleInput && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(moduleInput)) return moduleInput;
+      const appName = document.getElementById('appName').value.trim();
+      let name = appName.replace(/[^a-zA-Z0-9_]/g, '');
+      if (!name) {
+        const bundleId = document.getElementById('bundleId').value.trim();
+        if (bundleId) {
+          const parts = bundleId.split('.');
+          name = parts[parts.length - 1].replace(/[^a-zA-Z0-9_]/g, '');
+        }
+      }
+      if (!name) name = 'MyApp';
+      if (/^[0-9]/.test(name)) name = 'App' + name;
+      return name;
+    }
+
+    function updateModuleName() {
+      const moduleInput = document.getElementById('moduleName');
+      if (!moduleInput.dataset.userEdited) {
+        moduleInput.value = getModuleName();
+      }
+      updateModuleNameHint();
+    }
+
+    function validateModuleName() {
+      document.getElementById('moduleName').dataset.userEdited = 'true';
+      updateModuleNameHint();
+    }
+
+    function updateModuleNameHint() {
+      const name = getModuleName();
+      const hint = document.getElementById('moduleNameHint');
+      hint.textContent = `Xcode 專案名稱: ${name}.xcodeproj`;
+    }
+
+    function getSelectedDestinations() {
+      return [...document.querySelectorAll('#destinationsRow input:checked')].map(c => c.value);
+    }
+
+    function getSelectedOrientations(containerId) {
+      return [...document.querySelectorAll(`#${containerId} input:checked`)].map(c => c.value);
+    }
+
+    function getDeviceFamily() {
+      const dests = getSelectedDestinations();
+      const families = [];
+      if (dests.includes('iphone')) families.push('1');
+      if (dests.includes('ipad')) families.push('2');
+      return families.length > 0 ? `"${families.join(',')}"` : '"1"';
+    }
+
+    // ===== iOS VERSION GUIDE =====
+    function getIOSVersionGuide(minIOS, moduleName) {
+      const v = parseFloat(minIOS);
+      let framework, entryPoint, forbidden, allowed;
+
+      if (v < 13) {
+        // iOS 11-12: UIKit only
+        framework = 'UIKit with MVC architecture (Storyboard + UIViewController)';
+        entryPoint = `AppDelegate.swift (UIApplicationDelegate with UIWindow)`;
+        forbidden = [
+          'SwiftUI (any import SwiftUI)',
+          '@main attribute on App struct',
+          'Combine framework',
+          'SF Symbols',
+          '@Published, @ObservedObject, @StateObject, @EnvironmentObject',
+          'DiffableDataSource',
+          'Opaque return types (some View)',
+        ];
+        allowed = [
+          'UIKit: UITableView, UICollectionView, UINavigationController, UITabBarController',
+          'Auto Layout (NSLayoutConstraint or anchors)',
+          'CoreData for persistence',
+          'URLSession for networking',
+          'Codable protocol',
+          'UserDefaults',
+          'UIStoryboard, XIB, or programmatic UI',
+        ];
+      } else if (v < 14) {
+        // iOS 13: SwiftUI v1
+        framework = 'SwiftUI (v1) with MVVM architecture';
+        entryPoint = `AppDelegate.swift + SceneDelegate.swift (UIApplicationDelegate + UIWindowSceneDelegate hosting SwiftUI views)`;
+        forbidden = [
+          '@main attribute on App struct (iOS 14+)',
+          '@StateObject (iOS 14+)',
+          'LazyVStack, LazyHStack, LazyVGrid, LazyHGrid (iOS 14+)',
+          'ScrollViewReader (iOS 14+)',
+          '.onChange(of:) modifier (iOS 14+)',
+          '.toolbar modifier (iOS 14+)',
+          'ProgressView (iOS 14+)',
+          'Label view (iOS 14+)',
+          'Map view (iOS 14+)',
+          '#Preview macro (iOS 17+)',
+          'NavigationStack, NavigationSplitView (iOS 16+)',
+          '.searchable modifier (iOS 15+)',
+          '.task modifier (iOS 15+)',
+          'AsyncImage (iOS 15+)',
+          '@Observable macro (iOS 17+)',
+          'SwiftData (iOS 17+)',
+        ];
+        allowed = [
+          'SwiftUI: Text, Image, Button, Toggle, Slider, Picker, TextField, List, ScrollView, Form, Section',
+          'NavigationView (not NavigationStack), TabView',
+          '@State, @Binding, @ObservedObject, @EnvironmentObject',
+          'ObservableObject + @Published',
+          'GeometryReader',
+          '.navigationBarTitle(), .navigationBarItems()',
+          'Combine framework',
+          'SF Symbols (v1)',
+          'CoreData, UserDefaults, URLSession, Codable',
+          'Use struct _ Previews: PreviewProvider for previews (NOT #Preview macro)',
+        ];
+      } else if (v < 15) {
+        // iOS 14: SwiftUI v2
+        framework = 'SwiftUI (v2) with MVVM architecture';
+        entryPoint = `${moduleName}App.swift (using @main App protocol)`;
+        forbidden = [
+          'NavigationStack, NavigationSplitView (iOS 16+)',
+          '.searchable modifier (iOS 15+)',
+          '.task modifier (iOS 15+)',
+          '.refreshable modifier (iOS 15+)',
+          'AsyncImage (iOS 15+)',
+          '.swipeActions modifier (iOS 15+)',
+          '.confirmationDialog modifier (iOS 15+)',
+          '.overlay / .background with ShapeStyle parameter (iOS 15+)',
+          '.tint modifier (iOS 15+)',
+          'FocusState (iOS 15+)',
+          '#Preview macro (iOS 17+)',
+          '@Observable macro (iOS 17+)',
+          'SwiftData (iOS 17+)',
+          'Material / .ultraThinMaterial (iOS 15+)',
+        ];
+        allowed = [
+          'SwiftUI: All iOS 13 views + @StateObject, @AppStorage, @SceneStorage',
+          'LazyVStack, LazyHStack, LazyVGrid, LazyHGrid',
+          'ScrollViewReader, ProgressView, Label, Link, Map',
+          'NavigationView, TabView, .toolbar, .onChange(of:)',
+          '.navigationTitle(), .navigationBarTitleDisplayMode()',
+          'SF Symbols (v2)',
+          'WidgetKit',
+          'Use struct _ Previews: PreviewProvider for previews (NOT #Preview macro)',
+        ];
+      } else if (v < 16) {
+        // iOS 15: SwiftUI v3
+        framework = 'SwiftUI (v3) with MVVM architecture';
+        entryPoint = `${moduleName}App.swift (using @main App protocol)`;
+        forbidden = [
+          'NavigationStack (iOS 16+) — use NavigationView instead',
+          'NavigationSplitView (iOS 16+)',
+          '.navigationDestination modifier (iOS 16+)',
+          'Charts framework (iOS 16+)',
+          'ShareLink (iOS 16+)',
+          'Gauge view (iOS 16+)',
+          'ViewThatFits (iOS 16+)',
+          'AnyLayout (iOS 16+)',
+          'Layout protocol (iOS 16+)',
+          '#Preview macro (iOS 17+)',
+          '@Observable macro (iOS 17+)',
+          'SwiftData (iOS 17+)',
+          '.contentTransition (iOS 16+)',
+          'PhotosPicker (iOS 16+)',
+        ];
+        allowed = [
+          'SwiftUI: All iOS 14 views + AsyncImage, .task, .refreshable, .searchable',
+          '.swipeActions, .confirmationDialog, FocusState, @FocusState',
+          'Material (.ultraThinMaterial, .regularMaterial, etc.)',
+          '.overlay / .background with ShapeStyle',
+          '.tint modifier, .badge modifier',
+          'Canvas view for custom drawing',
+          'TimelineView',
+          'async/await, Task, structured concurrency',
+          'AttributedString',
+          'SF Symbols (v3)',
+          'Use struct _ Previews: PreviewProvider for previews (NOT #Preview macro)',
+        ];
+      } else if (v < 17) {
+        // iOS 16: SwiftUI v4
+        framework = 'SwiftUI (v4) with MVVM architecture';
+        entryPoint = `${moduleName}App.swift (using @main App protocol)`;
+        forbidden = [
+          '#Preview macro (iOS 17+) — use PreviewProvider instead',
+          '@Observable macro (iOS 17+) — use ObservableObject instead',
+          'SwiftData (iOS 17+) — use CoreData instead',
+          '.contentTransition(.numericText()) (iOS 16 has limited contentTransition)',
+          'withAnimation(.spring) shorthand (iOS 17+, use .spring() with params)',
+          '@Bindable property wrapper (iOS 17+)',
+          '.inspector modifier (iOS 17+)',
+          'TipKit (iOS 17+)',
+          '#unavailable (iOS 17+)',
+          'ScrollView with scrollPosition (iOS 17+)',
+        ];
+        allowed = [
+          'SwiftUI: All iOS 15 views + NavigationStack, NavigationSplitView, .navigationDestination',
+          'Charts framework, ShareLink, PhotosPicker',
+          'Gauge, ViewThatFits, AnyLayout, Layout protocol, Grid',
+          'New TextField features, MultiDatePicker',
+          '.scrollContentBackground, .scrollDismissesKeyboard',
+          'SF Symbols (v4)',
+          'RegexBuilder',
+          'Use struct _ Previews: PreviewProvider for previews (NOT #Preview macro)',
+        ];
+      } else {
+        // iOS 17+
+        framework = 'SwiftUI (latest) with MVVM architecture';
+        entryPoint = `${moduleName}App.swift (using @main App protocol)`;
+        forbidden = [];
+        allowed = [
+          'ALL SwiftUI features including @Observable, #Preview macro, SwiftData',
+          'NavigationStack, NavigationSplitView',
+          'TipKit, StoreKit 2, MapKit for SwiftUI',
+          '.inspector, .scrollPosition, contentTransition',
+          '@Bindable, @Observable',
+          'SF Symbols (v5)',
+        ];
+      }
+
+      let guide = `
+FRAMEWORK: ${framework}
+ENTRY POINT: ${entryPoint}
+
+⚠️⚠️⚠️ CRITICAL — iOS ${minIOS} DEPLOYMENT TARGET CONSTRAINTS ⚠️⚠️⚠️
+This app MUST compile and run on iOS ${minIOS}+. Using any API introduced after iOS ${minIOS} WITHOUT availability checks will cause compilation errors.
+DO NOT use if #available checks to use newer APIs — ONLY use APIs available in iOS ${minIOS}.
+`;
+
+      if (forbidden.length > 0) {
+        guide += `\n🚫 FORBIDDEN APIs (will cause build errors on iOS ${minIOS}):\n`;
+        forbidden.forEach(f => { guide += `  - ${f}\n`; });
+      }
+
+      if (allowed.length > 0) {
+        guide += `\n✅ ALLOWED APIs for iOS ${minIOS}+:\n`;
+        allowed.forEach(a => { guide += `  - ${a}\n`; });
+      }
+
+      guide += getVersionExamples(v);
+      return guide;
+    }
+
+    // 針對 target iOS 提供「錯誤 / 正確」對照範例，LLM 對 positive example 的遵守率遠高於禁止條列
+    function getVersionExamples(v) {
+      let ex = '\n\n📖 CONCRETE EXAMPLES (follow these exact patterns):\n';
+
+      if (v < 16) {
+        ex += `
+// ❌ WRONG — NavigationStack requires iOS 16+:
+NavigationStack {
+  ListView()
+    .navigationDestination(for: Item.self) { DetailView(item: $0) }
+}
+
+// ✅ CORRECT for iOS ${v}:
+NavigationView {
+  ListView()
+  // place NavigationLink(destination: DetailView(item: item)) { ... } inline where needed
+}
+`;
+      }
+
+      if (v < 17) {
+        ex += `
+// ❌ WRONG — @Observable requires iOS 17+:
+@Observable
+class ViewModel {
+  var items: [Item] = []
+}
+
+// ✅ CORRECT for iOS ${v}:
+class ViewModel: ObservableObject {
+  @Published var items: [Item] = []
+}
+
+// ❌ WRONG — #Preview macro requires iOS 17+:
+#Preview { ContentView() }
+
+// ✅ CORRECT for iOS ${v}:
+struct ContentView_Previews: PreviewProvider {
+  static var previews: some View { ContentView() }
+}
+`;
+      }
+
+      if (v < 15) {
+        ex += `
+// ❌ WRONG — .searchable requires iOS 15+:
+List(items) { ... }.searchable(text: $query)
+
+// ✅ CORRECT for iOS ${v}:
+VStack {
+  TextField("Search", text: $query)
+  List(items.filter { ... }) { ... }
+}
+
+// ❌ WRONG — .task requires iOS 15+:
+ContentView().task { await load() }
+
+// ✅ CORRECT for iOS ${v}:
+ContentView().onAppear { Task { await load() } }  // iOS 15+ async/await works
+// For iOS 13: use Combine or completion handlers
+`;
+      }
+
+      if (v < 14) {
+        ex += `
+// ❌ WRONG — @StateObject requires iOS 14+:
+struct ContentView: View {
+  @StateObject private var vm = ViewModel()
+}
+
+// ✅ CORRECT for iOS ${v}:
+struct ContentView: View {
+  @ObservedObject var vm: ViewModel  // instantiate in parent, pass down
+}
+`;
+      }
+
+      return ex;
+    }
+
+    // ===== UTILITIES =====
+    function escapeHTML(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // ===== LOCAL STORAGE PERSISTENCE =====
+    const STORAGE_KEY_STAGES = 'ios-app-gen-stages';
+    const STORAGE_KEY_SETTINGS = 'ios-app-gen-settings';
+    const STORAGE_KEY_APIKEY = 'ios-app-gen-apikey';
+    const sharedTextEncoder = new TextEncoder();
+
+    function saveStages() {
+      try {
+        const data = stages.map(s => ({
+          id: s.id, name: s.name, model: s.model,
+          builtin: s.builtin, description: s.description, prompt: s.prompt,
+        }));
+        localStorage.setItem(STORAGE_KEY_STAGES, JSON.stringify(data));
+      } catch (e) { console.warn('Failed to save stages:', e); }
+    }
+
+    function normalizeModel(model) {
+      return MODELS.some(m => m.id === model) ? model : DEFAULT_MODEL;
+    }
+
+    function loadStages() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY_STAGES);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(s => ({ ...s, model: normalizeModel(s.model) }));
+          }
+        }
+      } catch (e) { console.warn('Failed to load stages:', e); }
+      return null;
+    }
+
+    function resetStages() {
+      if (!confirm('確定要重置為預設階段嗎？自定義的階段將會被刪除。')) return;
+      stages = DEFAULT_STAGES.map(s => ({ ...s }));
+      localStorage.removeItem(STORAGE_KEY_STAGES);
+      renderStages();
+    }
+
+    function exportStages() {
+      try {
+        const data = stages.map(s => ({
+          id: s.id, name: s.name, model: s.model,
+          builtin: s.builtin, description: s.description, prompt: s.prompt,
+        }));
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.download = `ios-app-gen-stages-${ts}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('匯出失敗: ' + e.message);
+        console.error(e);
+      }
+    }
+
+    function importStages(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!Array.isArray(parsed) || parsed.length === 0) {
+            alert('無效的階段檔案：內容必須為非空的 JSON 陣列');
+            return;
+          }
+          for (const s of parsed) {
+            if (!s || typeof s !== 'object' || !s.name) {
+              alert('無效的階段檔案：每個階段必須至少包含 name 欄位');
+              return;
+            }
+          }
+          if (!confirm(`將匯入 ${parsed.length} 個階段並覆蓋目前的設定，確定要繼續嗎？`)) return;
+          stages = parsed.map(s => ({
+            id: s.id || ('custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)),
+            name: String(s.name),
+            model: normalizeModel(s.model),
+            builtin: !!s.builtin,
+            description: s.description || s.name,
+            prompt: s.prompt || '',
+          }));
+          renderStages();
+          saveStages();
+          alert(`成功匯入 ${stages.length} 個階段`);
+        } catch (err) {
+          alert('匯入失敗: ' + err.message);
+          console.error(err);
+        } finally {
+          e.target.value = '';
+        }
+      };
+      reader.onerror = () => {
+        alert('讀取檔案失敗');
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function saveSettings() {
+      try {
+        // API Key uses sessionStorage (cleared when browser closes) for security
+        sessionStorage.setItem(STORAGE_KEY_APIKEY, document.getElementById('apiKey').value);
+
+        const settings = {
+          apiBase: document.getElementById('apiBase').value,
+          temperature: document.getElementById('temperature').value,
+          maxTokens: document.getElementById('maxTokens').value,
+          appName: document.getElementById('appName').value,
+          moduleName: document.getElementById('moduleName').value,
+          moduleNameUserEdited: document.getElementById('moduleName').dataset.userEdited || '',
+          bundleId: document.getElementById('bundleId').value,
+          minIOS: document.getElementById('minIOS').value,
+          appFeatures: document.getElementById('appFeatures').value,
+          destinations: getSelectedDestinations(),
+          iphoneOrientations: getSelectedOrientations('iphoneOrientations'),
+          ipadOrientations: getSelectedOrientations('ipadOrientations'),
+        };
+        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+      } catch (e) { console.warn('Failed to save settings:', e); }
+    }
+
+    // Debounced version to avoid excessive writes on every keystroke
+    let _saveTimer;
+    function debouncedSaveSettings() {
+      clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(saveSettings, 500);
+    }
+
+    function loadSettings() {
+      try {
+        // Restore API Key from sessionStorage
+        const savedKey = sessionStorage.getItem(STORAGE_KEY_APIKEY);
+        if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+        const data = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (!data) return;
+        const s = JSON.parse(data);
+        if (s.apiBase !== undefined) document.getElementById('apiBase').value = s.apiBase;
+        if (s.temperature !== undefined) document.getElementById('temperature').value = s.temperature;
+        if (s.maxTokens !== undefined) document.getElementById('maxTokens').value = s.maxTokens;
+        if (s.appName) document.getElementById('appName').value = s.appName;
+        if (s.moduleName) {
+          document.getElementById('moduleName').value = s.moduleName;
+          if (s.moduleNameUserEdited) document.getElementById('moduleName').dataset.userEdited = 'true';
+        }
+        if (s.bundleId) document.getElementById('bundleId').value = s.bundleId;
+        if (s.minIOS) document.getElementById('minIOS').value = s.minIOS;
+        if (s.appFeatures) document.getElementById('appFeatures').value = s.appFeatures;
+        if (s.destinations) {
+          document.querySelectorAll('#destinationsRow input').forEach(cb => {
+            cb.checked = s.destinations.includes(cb.value);
+          });
+        }
+        if (s.iphoneOrientations) {
+          document.querySelectorAll('#iphoneOrientations input').forEach(cb => {
+            cb.checked = s.iphoneOrientations.includes(cb.value);
+          });
+        }
+        if (s.ipadOrientations) {
+          document.querySelectorAll('#ipadOrientations input').forEach(cb => {
+            cb.checked = s.ipadOrientations.includes(cb.value);
+          });
+        }
+      } catch (e) { console.warn('Failed to load settings:', e); }
+    }
+
+    // ===== INITIALIZATION =====
+    function init() {
+      const savedStages = loadStages();
+      stages = savedStages || DEFAULT_STAGES.map(s => ({ ...s }));
+      renderStages();
+      loadSettings();
+      updateModuleNameHint();
+
+      // Auto-save form settings on any change (debounced for text input)
+      document.querySelectorAll('.card input, .card textarea, .card select').forEach(el => {
+        el.addEventListener('change', saveSettings);
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.addEventListener('input', debouncedSaveSettings);
+        }
+      });
+
+      // iPad destination 取消時，自動取消所有 iPad Orientation
+      const ipadDestCb = document.querySelector('#destinationsRow input[value="ipad"]');
+      if (ipadDestCb) {
+        ipadDestCb.addEventListener('change', function () {
+          if (!this.checked) {
+            document.querySelectorAll('#ipadOrientations input').forEach(cb => cb.checked = false);
+            saveSettings();
+          }
+        });
+      }
+    }
+
+    // ===== SETTINGS =====
+    function toggleSettings() {
+      const el = document.getElementById('settingsContent');
+      const arrow = document.getElementById('settingsArrow');
+      el.classList.toggle('open');
+      arrow.textContent = el.classList.contains('open') ? '\u25BC' : '\u25B6';
+    }
+
+    // ===== MODEL SELECT HTML =====
+    function modelSelectHTML(selectedId, stageId) {
+      const groups = {};
+      MODELS.forEach(m => { (groups[m.group] = groups[m.group] || []).push(m); });
+      let html = `<select onchange="updateStageModel('${escapeHTML(stageId)}', this.value)">`;
+      for (const [group, models] of Object.entries(groups)) {
+        html += `<optgroup label="${group}">`;
+        models.forEach(m => {
+          html += `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''}>${m.name}</option>`;
+        });
+        html += '</optgroup>';
+      }
+      html += '</select>';
+      return html;
+    }
+
+    // ===== STAGE RENDERING =====
+    function renderStages() {
+      const list = document.getElementById('stageList');
+      list.innerHTML = stages.map((s, i) => `
+    <div class="stage-item" draggable="true" data-index="${i}"
+         ondragstart="dragStart(event)" ondragover="dragOver(event)"
+         ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"
+         ondrop="drop(event)" ondragend="dragEnd(event)">
+      <div class="stage-header">
+        <span class="drag-handle">&#9776;</span>
+        <span class="stage-name">${escapeHTML(s.name)}</span>
+        <span class="stage-badge ${s.builtin ? '' : 'custom'}">${s.builtin ? '預設' : '自定義'}</span>
+        <div class="stage-actions">
+          ${i > 0 ? `<button title="上移" onclick="moveStage(${i},-1)">&#9650;</button>` : ''}
+          ${i < stages.length - 1 ? `<button title="下移" onclick="moveStage(${i},1)">&#9660;</button>` : ''}
+          ${!s.builtin ? `<button class="delete-btn" title="刪除" onclick="removeStage(${i})">&#10005;</button>` : ''}
+        </div>
+      </div>
+      <div class="stage-desc">${escapeHTML(s.description)}</div>
+      <div class="stage-body">
+        <label>AI 模型：</label>
+        ${modelSelectHTML(s.model, s.id)}
+      </div>
+      ${!s.builtin ? `<div style="padding-left:30px"><textarea class="stage-desc-input" placeholder="自定義 AI 指令..." onchange="updateStagePrompt('${escapeHTML(s.id)}', this.value)">${escapeHTML(s.prompt || '')}</textarea></div>` : ''}
+    </div>
+  `).join('');
+    }
+
+    function updateStageModel(stageId, model) {
+      const s = stages.find(s => s.id === stageId);
+      if (s) { s.model = model; saveStages(); }
+    }
+
+    function updateStagePrompt(stageId, prompt) {
+      const s = stages.find(s => s.id === stageId);
+      if (s) { s.prompt = prompt; saveStages(); }
+    }
+
+    function moveStage(index, dir) {
+      const target = index + dir;
+      if (target < 0 || target >= stages.length) return;
+      [stages[index], stages[target]] = [stages[target], stages[index]];
+      renderStages();
+      saveStages();
+    }
+
+    function removeStage(index) {
+      stages.splice(index, 1);
+      renderStages();
+      saveStages();
+    }
+
+    // ===== DRAG & DROP =====
+    let dragIndex = null;
+    function dragStart(e) {
+      dragIndex = +e.currentTarget.dataset.index;
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+    function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    function dragEnter(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function drop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const targetIndex = +e.currentTarget.dataset.index;
+      if (dragIndex !== null && dragIndex !== targetIndex) {
+        const [moved] = stages.splice(dragIndex, 1);
+        stages.splice(targetIndex, 0, moved);
+        renderStages();
+        saveStages();
+      }
+    }
+    function dragEnd(e) { e.currentTarget.classList.remove('dragging'); dragIndex = null; }
+
+    // ===== ADD STAGE MODAL =====
+    function openAddStageModal() {
+      const nameInput = document.getElementById('newStageName');
+      document.getElementById('modalStageName').value = nameInput.value || '';
+      document.getElementById('modalStageDesc').value = '';
+      const sel = document.getElementById('modalInsertPos');
+      sel.innerHTML = stages.map((s, i) => `<option value="${i + 1}">在「${escapeHTML(s.name)}」之後</option>`).join('');
+      sel.innerHTML = `<option value="0">最前面</option>` + sel.innerHTML;
+      sel.value = stages.length;
+      document.getElementById('addStageModal').classList.add('active');
+    }
+
+    function closeAddStageModal() {
+      document.getElementById('addStageModal').classList.remove('active');
+    }
+
+    function confirmAddStage() {
+      const name = document.getElementById('modalStageName').value.trim();
+      const desc = document.getElementById('modalStageDesc').value.trim();
+      const pos = +document.getElementById('modalInsertPos').value;
+      if (!name) { alert('請輸入階段名稱'); return; }
+      const newStage = {
+        id: 'custom-' + Date.now(),
+        name: name,
+        model: DEFAULT_MODEL,
+        builtin: false,
+        description: desc || name,
+        prompt: desc || `Implement the "${name}" stage for this iOS app. Follow the same file output format.`
+      };
+      stages.splice(pos, 0, newStage);
+      renderStages();
+      saveStages();
+      closeAddStageModal();
+      document.getElementById('newStageName').value = '';
+    }
+
+    // ===== FILE PREVIEW =====
+    function renderFileTree() {
+      const tree = document.getElementById('fileTree');
+      const paths = Object.keys(generatedFiles).sort();
+      if (paths.length === 0) { tree.innerHTML = '<p style="color:var(--text2);font-size:0.85rem;">尚未產生任何檔案</p>'; return; }
+      tree.innerHTML = paths.map(p => {
+        const size = sharedTextEncoder.encode(generatedFiles[p]).length;
+        const sizeStr = size > 1024 ? (size / 1024).toFixed(1) + ' KB' : size + ' B';
+        const icon = p.endsWith('.swift') ? '&#128196;' : p.endsWith('.plist') ? '&#9881;' : p.endsWith('.json') ? '&#128203;' : p.endsWith('.storyboard') ? '&#127912;' : '&#128462;';
+        const escapedName = escapeHTML(p);
+        return `<div class="file-tree-item" onclick="showFilePreview(this.dataset.path)" data-path="${escapedName}">
+      <span class="ft-icon">${icon}</span>
+      <span class="ft-name">${escapedName}</span>
+      <span class="ft-size">${sizeStr}</span>
+    </div>`;
+      }).join('');
+    }
+
+    function showFilePreview(path) {
+      document.getElementById('fileModalTitle').textContent = path;
+      document.getElementById('fileModalContent').textContent = generatedFiles[path] || '';
+      document.getElementById('fileModal').classList.add('active');
+    }
+
+    function closeFileModal() {
+      document.getElementById('fileModal').classList.remove('active');
+    }
+
+    // ===== API CALL =====
+    async function callAI(model, systemPrompt, userPrompt, onChunk) {
+      const apiKey = document.getElementById('apiKey').value;
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const maxTokens = parseInt(document.getElementById('maxTokens').value);
+
+      if (!apiBase.startsWith('https://') && !apiBase.startsWith('http://localhost') && !apiBase.startsWith('http://127.0.0.1')) {
+        throw new Error('API Base URL 必須使用 HTTPS（本地開發除外）');
+      }
+
+      abortController = new AbortController();
+
+      const payload = {
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: maxTokens,
+        stream: true,
+      };
+      if (!MODELS.find(m => m.id === model)?.noTemperature) payload.temperature = temperature;
+
+      const response = await fetch(`${apiBase}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errText}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const data = trimmed.slice(5).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const json = JSON.parse(data);
+            const content = json.choices?.[0]?.delta?.content;
+            if (content) {
+              fullContent += content;
+              onChunk(content);
+            }
+          } catch (e) {
+            // skip malformed chunks
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith('data:')) {
+          const data = trimmed.slice(5).trim();
+          if (data !== '[DONE]') {
+            try {
+              const json = JSON.parse(data);
+              const content = json.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                if (onChunk) onChunk(content);
+              }
+            } catch (e) {}
+          }
+        }
+      }
+
+      return fullContent;
+    }
+
+    // ===== PARSE FILES FROM AI OUTPUT =====
+    function sanitizeFilePath(rawPath) {
+      let p = rawPath;
+      if (p.includes('..') || p.startsWith('/')) return null;
+      while (p.startsWith('./')) p = p.substring(2);
+      if (p.includes('..') || p.startsWith('/') || p.length === 0) return null;
+      return p;
+    }
+
+    function parseFiles(output) {
+      const files = {};
+      // Pattern: // ===== FILE: path ===== ... // ===== END FILE =====
+      const regex = /\/\/\s*=+\s*FILE:\s*(.+?)\s*=+\s*\n([\s\S]*?)\/\/\s*=+\s*END\s*FILE\s*=+/g;
+      let match;
+      while ((match = regex.exec(output)) !== null) {
+        const path = sanitizeFilePath(match[1].trim());
+        if (!path) continue;
+        const content = match[2].trim();
+        files[path] = content;
+      }
+
+      // Fallback: try ```swift markers with filename comment
+      if (Object.keys(files).length === 0) {
+        const altRegex = /```(?:swift)?\s*\n?\s*\/\/\s*(?:File:\s*)?(.+\.swift)\s*\n([\s\S]*?)```/g;
+        while ((match = altRegex.exec(output)) !== null) {
+          const path = sanitizeFilePath(match[1].trim());
+          if (!path) continue;
+          const content = match[2].trim();
+          files[path] = content;
+        }
+      }
+
+      // Another fallback: try ### filename pattern
+      if (Object.keys(files).length === 0) {
+        const altRegex2 = /###?\s+`?([^\n`]+\.swift)`?\s*\n```(?:swift)?\s*\n([\s\S]*?)```/g;
+        while ((match = altRegex2.exec(output)) !== null) {
+          const path = sanitizeFilePath(match[1].trim());
+          if (!path) continue;
+          const content = match[2].trim();
+          files[path] = content;
+        }
+      }
+
+      return files;
+    }
+
+    function parseAppIconSpec(output) {
+      const regex = /\/\/\s*=+\s*APP_ICON_SPEC\s*=+\s*\n([\s\S]*?)\/\/\s*=+\s*END\s*APP_ICON_SPEC\s*=+/;
+      const match = regex.exec(output);
+      if (!match) return null;
+      try {
+        return JSON.parse(match[1].trim());
+      } catch (e) {
+        console.warn('Failed to parse APP_ICON_SPEC:', e);
+        return null;
+      }
+    }
+
+    // ===== iOS VERSION COMPLIANCE SCAN =====
+    // 掃描所有檔案，找出使用了高於 minIOS 的 API
+    // 回傳 [{file, line, lineText, api, requiredIOS, replace}]
+    function scanIOSVersionViolations(files, minIOS) {
+      const target = parseFloat(minIOS);
+      if (!isFinite(target)) return [];
+
+      const violations = [];
+      for (const [file, content] of Object.entries(files)) {
+        if (!file.endsWith('.swift')) continue;
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          // 略過純註解行
+          const trimmed = line.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue;
+
+          for (const rule of IOS_API_MIN_VERSION) {
+            if (rule.minIOS <= target) continue;
+            if (rule.pattern.test(line)) {
+              // 提取命中的 API 名稱（取 regex 的第一個匹配字串）
+              const m = line.match(rule.pattern);
+              violations.push({
+                file,
+                line: i + 1,
+                lineText: line.trim().slice(0, 140),
+                api: m ? m[0] : rule.pattern.source,
+                requiredIOS: rule.minIOS,
+                replace: rule.replace || null,
+              });
+            }
+          }
+        }
+      }
+      return violations;
+    }
+
+    // 接收違規清單 → 組 targeted fix prompt → 呼叫 LLM → 覆寫 generatedFiles
+    // 回傳 { fixedCount, affectedFiles, result }
+    async function runIOSVersionFixPass(violations, minIOS, sanitizedName, model, onChunk) {
+      const byFile = {};
+      for (const v of violations) {
+        (byFile[v.file] ||= []).push(v);
+      }
+      const affectedFiles = Object.keys(byFile);
+
+      let violationList = '';
+      for (const file of affectedFiles) {
+        violationList += `\n${file}:\n`;
+        for (const v of byFile[file]) {
+          const suggestion = v.replace ? ` → replace with: ${v.replace}` : '';
+          violationList += `  - line ${v.line}: \`${v.api}\` requires iOS ${v.requiredIOS}+${suggestion}\n    code: ${v.lineText}\n`;
+        }
+      }
+
+      const systemPrompt = `You are a Swift code fixer specialized in iOS version compatibility. Your SOLE task: remove every use of iOS APIs newer than the deployment target, replacing them with equivalents available at the target version.
+
+RULES:
+- Do NOT use if #available / @available to work around — replace the API entirely.
+- Preserve all existing functionality and UI behavior as closely as possible.
+- Do NOT add new features, refactor unrelated code, or rename types.
+- Output the COMPLETE corrected version of EVERY affected file, even if only one line changed.
+
+OUTPUT FORMAT (strict):
+// ===== FILE: path =====
+(full file content)
+// ===== END FILE =====
+
+Output nothing else. No prose, no markdown, no explanations between files.`;
+
+      let userPrompt = `MINIMUM iOS DEPLOYMENT TARGET: ${minIOS}
+
+The following files contain APIs unavailable on iOS ${minIOS}. Fix EVERY violation listed.
+${violationList}
+
+--- AFFECTED FILES (output the complete corrected version of each) ---
+`;
+      for (const file of affectedFiles) {
+        userPrompt += `\n// ===== FILE: ${file} =====\n${generatedFiles[file]}\n// ===== END FILE =====\n`;
+      }
+
+      const result = await callAI(model, systemPrompt, userPrompt, onChunk || (() => {}));
+      const fixedFiles = parseFiles(result);
+      let fixedCount = 0;
+      for (const [path, content] of Object.entries(fixedFiles)) {
+        let normalizedPath = path;
+        if (normalizedPath.startsWith(sanitizedName + '/')) {
+          normalizedPath = normalizedPath.substring(sanitizedName.length + 1);
+        }
+        generatedFiles[normalizedPath] = content;
+        fixedCount++;
+      }
+      return { result, fixedCount, affectedFilesCount: affectedFiles.length };
+    }
+
+    async function generateAppIconImage(spec) {
+      const size = 1024;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // 背景漸層
+      const colors = spec.backgroundColors || ['#0071e3', '#6c5ce7'];
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, colors[0]);
+      gradient.addColorStop(1, colors[1]);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // Emoji
+      const emoji = spec.emoji || '⚙️';
+      const fgColor = spec.foregroundColor || 'rgba(0,0,0,0.2)';
+
+      // 陰影
+      ctx.shadowColor = fgColor;
+      ctx.shadowBlur = 60;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 10;
+
+      ctx.font = `${size * 0.5}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(emoji, size / 2, size / 2);
+
+      // 轉為 PNG blob
+      return new Promise(resolve => {
+        canvas.toBlob(blob => resolve(blob), 'image/png');
+      });
+    }
+
+    // ===== XCODE PROJECT GENERATOR =====
+    function generateInfoPlist(appName, bundleId, minIOS) {
+      const v = parseFloat(minIOS);
+      const iphoneOris = getSelectedOrientations('iphoneOrientations');
+      const ipadOris = getSelectedOrientations('ipadOrientations');
+      const dests = getSelectedDestinations();
+
+      let extras = '';
+      if (v >= 13 && v < 14) {
+        extras = `\t<key>UIApplicationSceneManifest</key>
+\t<dict>
+\t\t<key>UIApplicationSupportsMultipleScenes</key>
+\t\t<false/>
+\t\t<key>UISceneConfigurations</key>
+\t\t<dict>
+\t\t\t<key>UIWindowSceneSessionRoleApplication</key>
+\t\t\t<array>
+\t\t\t\t<dict>
+\t\t\t\t\t<key>UISceneConfigurationName</key>
+\t\t\t\t\t<string>Default Configuration</string>
+\t\t\t\t\t<key>UISceneDelegateClassName</key>
+\t\t\t\t\t<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+\t\t\t\t</dict>
+\t\t\t</array>
+\t\t</dict>
+\t</dict>
+`;
+      } else if (v >= 14) {
+        extras = `\t<key>UIApplicationSceneManifest</key>
+\t<dict>
+\t\t<key>UIApplicationSupportsMultipleScenes</key>
+\t\t<true/>
+\t</dict>
+`;
+      }
+
+      const iphoneOriXml = iphoneOris.map(o => `\t\t<string>${o}</string>`).join('\n');
+      const ipadOriXml = ipadOris.map(o => `\t\t<string>${o}</string>`).join('\n');
+
+      let catalystFlag = '';
+      if (dests.includes('mac-catalyst')) {
+        catalystFlag = `\t<key>UIRequiresCatalyst</key>
+\t<true/>
+`;
+      }
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>CFBundleDevelopmentRegion</key>
+\t<string>$(DEVELOPMENT_LANGUAGE)</string>
+\t<key>CFBundleExecutable</key>
+\t<string>$(EXECUTABLE_NAME)</string>
+\t<key>CFBundleIdentifier</key>
+\t<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+\t<key>CFBundleInfoDictionaryVersion</key>
+\t<string>6.0</string>
+\t<key>CFBundleName</key>
+\t<string>$(PRODUCT_NAME)</string>
+\t<key>CFBundlePackageType</key>
+\t<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+\t<key>CFBundleShortVersionString</key>
+\t<string>1.0</string>
+\t<key>CFBundleVersion</key>
+\t<string>1</string>
+\t<key>LSRequiresIPhoneOS</key>
+\t<true/>
+${extras}${catalystFlag}\t<key>UILaunchScreen</key>
+\t<dict/>
+\t<key>UIRequiredDeviceCapabilities</key>
+\t<array>
+\t\t<string>armv7</string>
+\t</array>
+\t<key>UISupportedInterfaceOrientations</key>
+\t<array>
+${iphoneOriXml}
+\t</array>
+\t<key>UISupportedInterfaceOrientations~ipad</key>
+\t<array>
+${ipadOriXml}
+\t</array>
+</dict>
+</plist>`;
+    }
+
+    function generateAssetContents() {
+      return JSON.stringify({ info: { author: "xcode", version: 1 } }, null, 2);
+    }
+
+    function generateAccentColorContents() {
+      return JSON.stringify({
+        colors: [{ idiom: "universal" }],
+        info: { author: "xcode", version: 1 }
+      }, null, 2);
+    }
+
+    function generateAppIconContents(hasImage) {
+      const imageEntry = { idiom: "universal", platform: "ios", size: "1024x1024" };
+      if (hasImage) imageEntry.filename = "AppIcon.png";
+      return JSON.stringify({
+        images: [imageEntry],
+        info: { author: "xcode", version: 1 }
+      }, null, 2);
+    }
+
+    function buildGroupTree(filePaths) {
+      const root = { children: {}, files: [] };
+      filePaths.forEach(fp => {
+        const parts = fp.split('/');
+        let node = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!node.children[parts[i]]) node.children[parts[i]] = { children: {}, files: [] };
+          node = node.children[parts[i]];
+        }
+        node.files.push(parts[parts.length - 1]);
+      });
+      return root;
+    }
+
+    function generateXcscheme(name) {
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<Scheme LastUpgradeVersion="1540" version="1.7">
+  <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES" runPostActionsOnFailure="NO">
+    <BuildActionEntries>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">
+        <BuildableReference BuildableIdentifier="primary" BlueprintName="${name}" ReferencedContainer="container:${name}.xcodeproj">
+        </BuildableReference>
+      </BuildActionEntry>
+    </BuildActionEntries>
+  </BuildAction>
+  <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB" shouldUseLaunchSchemeArgsEnv="YES" shouldAutocreateTestPlan="YES">
+  </TestAction>
+  <LaunchAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB" launchStyle="0" useCustomWorkingDirectory="NO" ignoresPersistentStateOnLaunch="NO" debugDocumentVersioning="YES" debugServiceExtension="internal" allowLocationSimulation="YES">
+    <BuildableProductRunnable runnableDebuggingMode="0">
+      <BuildableReference BuildableIdentifier="primary" BlueprintName="${name}" ReferencedContainer="container:${name}.xcodeproj">
+      </BuildableReference>
+    </BuildableProductRunnable>
+  </LaunchAction>
+  <ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES" savedToolIdentifier="" useCustomWorkingDirectory="NO" debugDocumentVersioning="YES">
+    <BuildableProductRunnable runnableDebuggingMode="0">
+      <BuildableReference BuildableIdentifier="primary" BlueprintName="${name}" ReferencedContainer="container:${name}.xcodeproj">
+      </BuildableReference>
+    </BuildableProductRunnable>
+  </ProfileAction>
+  <AnalyzeAction buildConfiguration="Debug" />
+  <ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES" />
+</Scheme>`;
+    }
+
+    function generatePbxproj(sanitizedName, bundleId, minIOS, swiftFiles, deviceFamily, dests) {
+      let uuidIdx = 0;
+      const uuid = () => {
+        uuidIdx++;
+        const base = uuidIdx.toString(16).toUpperCase().padStart(20, '0');
+        return 'AA01' + base;
+      };
+
+      const projUUID = uuid();
+      const mainGroupUUID = uuid();
+      const srcGroupUUID = uuid();
+      const productsGroupUUID = uuid();
+      const targetUUID = uuid();
+      const productRefUUID = uuid();
+      const configListProjUUID = uuid();
+      const configListTargetUUID = uuid();
+      const debugProjUUID = uuid();
+      const releaseProjUUID = uuid();
+      const debugTargetUUID = uuid();
+      const releaseTargetUUID = uuid();
+      const sourcePhaseUUID = uuid();
+      const resourcePhaseUUID = uuid();
+      const frameworkPhaseUUID = uuid();
+      const infoPlistRefUUID = uuid();
+      const assetsRefUUID = uuid();
+      const assetsBuildUUID = uuid();
+
+      const fileEntries = swiftFiles.map(f => ({
+        path: f,
+        name: f.split('/').pop(),
+        refUUID: uuid(),
+        buildUUID: uuid(),
+      }));
+
+      // Build PBXBuildFile
+      let buildFileSection = '';
+      fileEntries.forEach(f => {
+        buildFileSection += `\t\t${f.buildUUID} /* ${f.name} in Sources */ = {isa = PBXBuildFile; fileRef = ${f.refUUID} /* ${f.name} */; };\n`;
+      });
+      buildFileSection += `\t\t${assetsBuildUUID} /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ${assetsRefUUID} /* Assets.xcassets */; };\n`;
+
+      // Build PBXFileReference
+      let fileRefSection = '';
+      fileEntries.forEach(f => {
+        fileRefSection += `\t\t${f.refUUID} /* ${f.name} */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "${f.name}"; sourceTree = "<group>"; };\n`;
+      });
+      fileRefSection += `\t\t${infoPlistRefUUID} /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };\n`;
+      fileRefSection += `\t\t${assetsRefUUID} /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };\n`;
+      fileRefSection += `\t\t${productRefUUID} /* ${sanitizedName}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "${sanitizedName}.app"; sourceTree = BUILT_PRODUCTS_DIR; };\n`;
+
+      // Build PBXGroup - nested folder tree
+      const rootNode = { dirs: {}, files: [] };
+      fileEntries.forEach(f => {
+        const parts = f.path.split('/');
+        let node = rootNode;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!node.dirs[parts[i]]) node.dirs[parts[i]] = { dirs: {}, files: [] };
+          node = node.dirs[parts[i]];
+        }
+        node.files.push(f);
+      });
+
+      let nestedGroupSection = '';
+      function collectChildren(node) {
+        const refs = [];
+        Object.keys(node.dirs).sort().forEach(dirName => {
+          const dirUUID = buildGroup(dirName, node.dirs[dirName]);
+          refs.push(`${dirUUID} /* ${dirName} */`);
+        });
+        node.files.forEach(f => refs.push(`${f.refUUID} /* ${f.name} */`));
+        return refs;
+      }
+      function buildGroup(name, node) {
+        const groupUUID = uuid();
+        const children = collectChildren(node);
+        nestedGroupSection += `\t\t${groupUUID} /* ${name} */ = {
+\t\t\tisa = PBXGroup;
+\t\t\tchildren = (
+\t\t\t\t${children.join(',\n\t\t\t\t')},
+\t\t\t);
+\t\t\tpath = "${name}";
+\t\t\tsourceTree = "<group>";
+\t\t};
+`;
+        return groupUUID;
+      }
+
+      const srcChildRefs = collectChildren(rootNode);
+      srcChildRefs.push(`${infoPlistRefUUID} /* Info.plist */`);
+      srcChildRefs.push(`${assetsRefUUID} /* Assets.xcassets */`);
+      const srcChildren = srcChildRefs.join(',\n\t\t\t\t');
+
+      // Build source file list for build phase
+      const sourceFilesList = fileEntries.map(f => `${f.buildUUID} /* ${f.name} in Sources */`).join(',\n\t\t\t\t');
+      const resourceFilesList = `${assetsBuildUUID} /* Assets.xcassets in Resources */`;
+
+      return `// !$*UTF8*$!
+{
+\tarchiveVersion = 1;
+\tclasses = {
+\t};
+\tobjectVersion = 56;
+\tobjects = {
+
+/* Begin PBXBuildFile section */
+${buildFileSection}/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+${fileRefSection}/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+\t\t${frameworkPhaseUUID} /* Frameworks */ = {
+\t\t\tisa = PBXFrameworksBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+\t\t${mainGroupUUID} = {
+\t\t\tisa = PBXGroup;
+\t\t\tchildren = (
+\t\t\t\t${srcGroupUUID} /* ${sanitizedName} */,
+\t\t\t\t${productsGroupUUID} /* Products */,
+\t\t\t);
+\t\t\tsourceTree = "<group>";
+\t\t};
+\t\t${productsGroupUUID} /* Products */ = {
+\t\t\tisa = PBXGroup;
+\t\t\tchildren = (
+\t\t\t\t${productRefUUID} /* ${sanitizedName}.app */,
+\t\t\t);
+\t\t\tname = Products;
+\t\t\tsourceTree = "<group>";
+\t\t};
+\t\t${srcGroupUUID} /* ${sanitizedName} */ = {
+\t\t\tisa = PBXGroup;
+\t\t\tchildren = (
+\t\t\t\t${srcChildren}
+\t\t\t);
+\t\t\tpath = "${sanitizedName}";
+\t\t\tsourceTree = "<group>";
+\t\t};
+${nestedGroupSection}/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+\t\t${targetUUID} /* ${sanitizedName} */ = {
+\t\t\tisa = PBXNativeTarget;
+\t\t\tbuildConfigurationList = ${configListTargetUUID} /* Build configuration list for PBXNativeTarget "${sanitizedName}" */;
+\t\t\tbuildPhases = (
+\t\t\t\t${sourcePhaseUUID} /* Sources */,
+\t\t\t\t${frameworkPhaseUUID} /* Frameworks */,
+\t\t\t\t${resourcePhaseUUID} /* Resources */,
+\t\t\t);
+\t\t\tbuildRules = (
+\t\t\t);
+\t\t\tdependencies = (
+\t\t\t);
+\t\t\tname = "${sanitizedName}";
+\t\t\tproductName = "${sanitizedName}";
+\t\t\tproductReference = ${productRefUUID} /* ${sanitizedName}.app */;
+\t\t\tproductType = "com.apple.product-type.application";
+\t\t};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+\t\t${projUUID} /* Project object */ = {
+\t\t\tisa = PBXProject;
+\t\t\tattributes = {
+\t\t\t\tBuildIndependentTargetsInParallel = 1;
+\t\t\t\tLastSwiftUpdateCheck = 1540;
+\t\t\t\tLastUpgradeCheck = 1540;
+\t\t\t};
+\t\t\tbuildConfigurationList = ${configListProjUUID} /* Build configuration list for PBXProject "${sanitizedName}" */;
+\t\t\tcompatibilityVersion = "Xcode 14.0";
+\t\t\tdevelopmentRegion = en;
+\t\t\thasScannedForEncodings = 0;
+\t\t\tknownRegions = (
+\t\t\t\ten,
+\t\t\t\tBase,
+\t\t\t);
+\t\t\tmainGroup = ${mainGroupUUID};
+\t\t\tproductRefGroup = ${productsGroupUUID} /* Products */;
+\t\t\tprojectDirPath = "";
+\t\t\tprojectRoot = "";
+\t\t\ttargets = (
+\t\t\t\t${targetUUID} /* ${sanitizedName} */,
+\t\t\t);
+\t\t};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+\t\t${resourcePhaseUUID} /* Resources */ = {
+\t\t\tisa = PBXResourcesBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+\t\t\t\t${resourceFilesList},
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+\t\t${sourcePhaseUUID} /* Sources */ = {
+\t\t\tisa = PBXSourcesBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+\t\t\t\t${sourceFilesList},
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+\t\t${debugProjUUID} /* Debug */ = {
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {
+\t\t\t\tALWAYS_SEARCH_USER_PATHS = NO;
+\t\t\t\tENABLE_USER_SCRIPT_SANDBOXING = YES;
+\t\t\t\tCLANG_ANALYZER_NONNULL = YES;
+\t\t\t\tCLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+\t\t\t\tCLANG_ENABLE_MODULES = YES;
+\t\t\t\tCLANG_ENABLE_OBJC_ARC = YES;
+\t\t\t\tCOPY_PHASE_STRIP = NO;
+\t\t\t\tDEBUG_INFORMATION_FORMAT = dwarf;
+\t\t\t\tENABLE_STRICT_OBJC_MSGSEND = YES;
+\t\t\t\tENABLE_TESTABILITY = YES;
+\t\t\t\tGCC_C_LANGUAGE_STANDARD = gnu17;
+\t\t\t\tGCC_DYNAMIC_NO_PIC = NO;
+\t\t\t\tGCC_OPTIMIZATION_LEVEL = 0;
+\t\t\t\tGCC_PREPROCESSOR_DEFINITIONS = (
+\t\t\t\t\t"DEBUG=1",
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t);
+\t\t\t\tGCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+\t\t\t\tGCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = ${minIOS};
+\t\t\t\tMTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+\t\t\t\tONLY_ACTIVE_ARCH = YES;
+\t\t\t\tSDKROOT = iphoneos;
+\t\t\t\tSWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+\t\t\t\tSWIFT_OPTIMIZATION_LEVEL = "-Onone";
+\t\t\t};
+\t\t\tname = Debug;
+\t\t};
+\t\t${releaseProjUUID} /* Release */ = {
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {
+\t\t\t\tALWAYS_SEARCH_USER_PATHS = NO;
+\t\t\t\tCLANG_ANALYZER_NONNULL = YES;
+\t\t\t\tCLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+\t\t\t\tCLANG_ENABLE_MODULES = YES;
+\t\t\t\tCLANG_ENABLE_OBJC_ARC = YES;
+\t\t\t\tCOPY_PHASE_STRIP = NO;
+\t\t\t\tDEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+\t\t\t\tENABLE_NS_ASSERTIONS = NO;
+\t\t\t\tENABLE_STRICT_OBJC_MSGSEND = YES;
+\t\t\t\tGCC_C_LANGUAGE_STANDARD = gnu17;
+\t\t\t\tGCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+\t\t\t\tGCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = ${minIOS};
+\t\t\t\tMTL_ENABLE_DEBUG_INFO = NO;
+\t\t\t\tSDKROOT = iphoneos;
+\t\t\t\tSWIFT_COMPILATION_MODE = wholemodule;
+\t\t\t\tVALIDATE_PRODUCT = YES;
+\t\t\t};
+\t\t\tname = Release;
+\t\t};
+\t\t${debugTargetUUID} /* Debug */ = {
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {
+\t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+\t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tDEVELOPMENT_ASSET_PATHS = "";
+\t\t\t\tENABLE_PREVIEWS = YES;
+\t\t\t\tGENERATE_INFOPLIST_FILE = NO;
+\t\t\t\tINFOPLIST_FILE = "${sanitizedName}/Info.plist";
+\t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+\t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+\t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
+\t\t\t\tSUPPORTS_MACCATALYST = ${dests.includes('mac-catalyst') ? 'YES' : 'NO'};
+\t\t\t\tSUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = ${dests.includes('vision') ? 'YES' : 'NO'};
+\t\t\t\tLD_RUNPATH_SEARCH_PATHS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"@executable_path/Frameworks",
+\t\t\t\t);
+\t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = "${bundleId}";
+\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = ${deviceFamily};
+\t\t\t};
+\t\t\tname = Debug;
+\t\t};
+\t\t${releaseTargetUUID} /* Release */ = {
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {
+\t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+\t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 1;
+\t\t\t\tDEVELOPMENT_ASSET_PATHS = "";
+\t\t\t\tENABLE_PREVIEWS = YES;
+\t\t\t\tGENERATE_INFOPLIST_FILE = NO;
+\t\t\t\tINFOPLIST_FILE = "${sanitizedName}/Info.plist";
+\t\t\t\tINFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+\t\t\t\tINFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+\t\t\t\tINFOPLIST_KEY_UILaunchScreen_Generation = YES;
+\t\t\t\tSUPPORTS_MACCATALYST = ${dests.includes('mac-catalyst') ? 'YES' : 'NO'};
+\t\t\t\tSUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = ${dests.includes('vision') ? 'YES' : 'NO'};
+\t\t\t\tLD_RUNPATH_SEARCH_PATHS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"@executable_path/Frameworks",
+\t\t\t\t);
+\t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = "${bundleId}";
+\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = ${deviceFamily};
+\t\t\t};
+\t\t\tname = Release;
+\t\t};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+\t\t${configListProjUUID} /* Build configuration list for PBXProject "${sanitizedName}" */ = {
+\t\t\tisa = XCConfigurationList;
+\t\t\tbuildConfigurations = (
+\t\t\t\t${debugProjUUID} /* Debug */,
+\t\t\t\t${releaseProjUUID} /* Release */,
+\t\t\t);
+\t\t\tdefaultConfigurationIsVisible = 0;
+\t\t\tdefaultConfigurationName = Release;
+\t\t};
+\t\t${configListTargetUUID} /* Build configuration list for PBXNativeTarget "${sanitizedName}" */ = {
+\t\t\tisa = XCConfigurationList;
+\t\t\tbuildConfigurations = (
+\t\t\t\t${debugTargetUUID} /* Debug */,
+\t\t\t\t${releaseTargetUUID} /* Release */,
+\t\t\t);
+\t\t\tdefaultConfigurationIsVisible = 0;
+\t\t\tdefaultConfigurationName = Release;
+\t\t};
+/* End XCConfigurationList section */
+
+\t};
+\trootObject = ${projUUID} /* Project object */;
+}`;
+    }
+
+    // ===== ZIP & DOWNLOAD =====
+    async function createProjectZip(appName, bundleId, minIOS, files) {
+      const zip = new JSZip();
+      const sanitizedName = getModuleName();
+      const root = zip.folder(sanitizedName);
+
+      // .xcodeproj bundle (at same level as source folder inside root)
+      const xcodeproj = root.folder(`${sanitizedName}.xcodeproj`);
+      const swiftFiles = Object.keys(files).filter(f => f.endsWith('.swift'));
+      const deviceFamily = getDeviceFamily();
+      const dests = getSelectedDestinations();
+      xcodeproj.file('project.pbxproj', generatePbxproj(sanitizedName, bundleId, minIOS, swiftFiles, deviceFamily, dests));
+
+      // project.xcworkspace helps Xcode/Finder recognize the .xcodeproj bundle
+      const workspace = xcodeproj.folder('project.xcworkspace');
+      workspace.file('contents.xcworkspacedata', `<?xml version="1.0" encoding="UTF-8"?>
+<Workspace version="1.0">
+  <FileRef location="self:">
+  </FileRef>
+</Workspace>`);
+      const wsSharedData = workspace.folder('xcshareddata');
+      wsSharedData.file('WorkspaceSettings.xcsettings', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>PreviewsEnabled</key>
+\t<false/>
+</dict>
+</plist>`);
+
+      // xcshareddata for scheme
+      const sharedData = xcodeproj.folder('xcshareddata').folder('xcschemes');
+      sharedData.file(`${sanitizedName}.xcscheme`, generateXcscheme(sanitizedName));
+
+      // Source folder (named same as module, sibling to .xcodeproj)
+      const srcFolder = root.folder(sanitizedName);
+
+      // Add generated files
+      for (const [path, content] of Object.entries(files)) {
+        const parts = path.split('/');
+        let folder = srcFolder;
+        for (let i = 0; i < parts.length - 1; i++) {
+          folder = folder.folder(parts[i]);
+        }
+        folder.file(parts[parts.length - 1], content);
+      }
+
+      // Info.plist
+      srcFolder.file('Info.plist', generateInfoPlist(appName, bundleId, minIOS));
+
+      // Assets.xcassets
+      const assets = srcFolder.folder('Assets.xcassets');
+      assets.file('Contents.json', generateAssetContents());
+      const accentColor = assets.folder('AccentColor.colorset');
+      accentColor.file('Contents.json', generateAccentColorContents());
+      const appIconFolder = assets.folder('AppIcon.appiconset');
+      const hasIconImage = !!appIconSpec;
+      appIconFolder.file('Contents.json', generateAppIconContents(hasIconImage));
+      if (appIconSpec) {
+        const iconBlob = await generateAppIconImage(appIconSpec);
+        appIconFolder.file('AppIcon.png', iconBlob);
+      }
+
+      return await zip.generateAsync({ type: 'blob' });
+    }
+
+    // ===== GENERATION FLOW =====
+    async function startGeneration(startIndex = 0) {
+      const appName = document.getElementById('appName').value.trim();
+      const bundleId = document.getElementById('bundleId').value.trim();
+      const features = document.getElementById('appFeatures').value.trim();
+      const minIOS = document.getElementById('minIOS').value;
+
+      if (!appName) { alert('請輸入 App 名稱'); return; }
+      if (!bundleId) { alert('請輸入 Bundle ID'); return; }
+      if (!features) { alert('請輸入核心功能描述'); return; }
+
+      const sanitizedName = getModuleName();
+      if (!sanitizedName) { alert('請輸入有效的 Swift 模組名稱（英文）'); return; }
+
+      const isRetry = startIndex > 0;
+
+      isGenerating = true;
+      if (!isRetry) {
+        generatedFiles = {};
+        appIconSpec = null;
+      }
+      document.getElementById('generateBtn').style.display = 'none';
+      document.getElementById('stopBtn').style.display = '';
+      document.getElementById('progressSection').classList.add('active');
+      document.getElementById('filePreviewSection').classList.add('active');
+      document.getElementById('downloadSection').classList.remove('active');
+      const outputArea = document.getElementById('outputArea');
+
+      if (!isRetry) {
+        outputArea.textContent = '';
+        // Render progress items
+        const progressList = document.getElementById('progressList');
+        progressList.innerHTML = stages.map((s, i) => `
+    <div class="stage-progress" id="progress-${i}">
+      <div class="status-icon" id="status-icon-${i}">&#9203;</div>
+      <div class="stage-label">${escapeHTML(s.name)}</div>
+      <div class="stage-time" id="stage-time-${i}"></div>
+    </div>
+  `).join('');
+      } else {
+        // 重試：重置從 startIndex 開始的階段顯示狀態，並移除舊的重試按鈕
+        for (let i = startIndex; i < stages.length; i++) {
+          const iconEl = document.getElementById(`status-icon-${i}`);
+          const timeEl = document.getElementById(`stage-time-${i}`);
+          if (iconEl) iconEl.innerHTML = '&#9203;';
+          if (timeEl) timeEl.textContent = '';
+          const row = document.getElementById(`progress-${i}`);
+          if (row) {
+            const oldBtn = row.querySelector('.retry-btn');
+            if (oldBtn) oldBtn.remove();
+          }
+        }
+        const retryMarker = document.createElement('span');
+        retryMarker.className = 'stage-marker';
+        retryMarker.textContent = `\n\n════ 從第 ${startIndex + 1} 階段「${stages[startIndex].name}」重試 ════\n`;
+        outputArea.appendChild(retryMarker);
+      }
+
+      let scrollPending = false;
+
+      for (let i = startIndex; i < stages.length; i++) {
+        if (!isGenerating) break;
+        const stage = stages[i];
+
+        // Update progress
+        document.getElementById(`status-icon-${i}`).innerHTML = '<div class="spinner"></div>';
+        const startTime = Date.now();
+
+        const stageMarker = document.createElement('span');
+        stageMarker.className = 'stage-marker';
+        stageMarker.textContent = `\n━━━ ${stage.name} (${stage.model}) ━━━\n`;
+        outputArea.appendChild(stageMarker);
+        const currentStreamSpan = document.createElement('span');
+        outputArea.appendChild(currentStreamSpan);
+        if (!scrollPending) {
+          scrollPending = true;
+          requestAnimationFrame(() => {
+            outputArea.scrollTop = outputArea.scrollHeight;
+            scrollPending = false;
+          });
+        }
+
+        const fileOutputInstruction = `
+
+CRITICAL OUTPUT FORMAT: You MUST output each file using this EXACT format - no other format will be accepted:
+
+// ===== FILE: filename.swift =====
+(file content here)
+// ===== END FILE =====
+
+For files in subdirectories use paths like: Models/User.swift, Views/HomeView.swift, ViewModels/HomeViewModel.swift
+Do NOT nest under any project name folder - just use relative paths from the source root.
+Every file MUST have both the FILE and END FILE markers or it will be lost.`;
+
+        const iosVersionGuide = getIOSVersionGuide(minIOS, sanitizedName);
+        const dests = getSelectedDestinations();
+        const iphoneOris = getSelectedOrientations('iphoneOrientations');
+        const ipadOris = getSelectedOrientations('ipadOrientations');
+        const oriMap = {
+          'UIInterfaceOrientationPortrait': 'Portrait',
+          'UIInterfaceOrientationLandscapeLeft': 'Landscape Left',
+          'UIInterfaceOrientationLandscapeRight': 'Landscape Right',
+          'UIInterfaceOrientationPortraitUpsideDown': 'Upside Down'
+        };
+
+        const appContext = `
+APP NAME: ${appName}
+SWIFT MODULE NAME: ${sanitizedName}
+BUNDLE ID: ${bundleId}
+MINIMUM iOS DEPLOYMENT TARGET: ${minIOS}
+SUPPORTED DESTINATIONS: ${dests.map(d => d === 'iphone' ? 'iPhone' : d === 'ipad' ? 'iPad' : d === 'mac-catalyst' ? 'Mac (Catalyst)' : 'Apple Vision').join(', ')}
+IPHONE ORIENTATIONS: ${iphoneOris.map(o => oriMap[o] || o).join(', ')}
+IPAD ORIENTATIONS: ${ipadOris.map(o => oriMap[o] || o).join(', ')}
+CORE FEATURES: ${features}`;
+
+        // iosVersionGuide 與階段無關，只跟 minIOS 有關 → 放 system prompt 可享 prompt cache 且注意力更集中
+        let systemPrompt = stage.prompt + fileOutputInstruction + '\n\n' + iosVersionGuide;
+        let userPrompt = appContext;
+
+        if (i > 0) {
+          userPrompt += `\n\n--- FILES GENERATED SO FAR ---\n`;
+          for (const [path, content] of Object.entries(generatedFiles)) {
+            userPrompt += `\n// ===== FILE: ${path} =====\n${content}\n// ===== END FILE =====\n`;
+          }
+          userPrompt += `\n--- END OF EXISTING FILES ---\n\nNow proceed with: ${stage.name}\nBuild upon the existing files above. You may modify existing files or add new ones.`;
+        }
+
+        try {
+          const result = await callAI(stage.model, systemPrompt, userPrompt, (chunk) => {
+            currentStreamSpan.textContent += chunk;
+            if (!scrollPending) {
+              scrollPending = true;
+              requestAnimationFrame(() => {
+                outputArea.scrollTop = outputArea.scrollHeight;
+                scrollPending = false;
+              });
+            }
+          });
+
+          // Parse files from this stage
+          const stageFiles = parseFiles(result);
+          const fileCount = Object.keys(stageFiles).length;
+
+          // Normalize paths - remove leading project name folder if present
+          for (const [path, content] of Object.entries(stageFiles)) {
+            let normalizedPath = path;
+            if (normalizedPath.startsWith(sanitizedName + '/')) {
+              normalizedPath = normalizedPath.substring(sanitizedName.length + 1);
+            }
+            generatedFiles[normalizedPath] = content;
+          }
+
+          // 嘗試解析 App Icon 規格
+          const iconSpec = parseAppIconSpec(result);
+          if (iconSpec) appIconSpec = iconSpec;
+
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          document.getElementById(`status-icon-${i}`).textContent = '\u2705';
+          document.getElementById(`stage-time-${i}`).textContent = `${elapsed}s | ${fileCount} 個檔案`;
+
+          const fileMarker = document.createElement('span');
+          fileMarker.className = 'file-marker';
+          fileMarker.textContent = `\n✓ 階段完成 - 產生 ${fileCount} 個檔案\n`;
+          outputArea.appendChild(fileMarker);
+
+          renderFileTree();
+
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            document.getElementById(`status-icon-${i}`).textContent = '\u23F8\uFE0F';
+            const abortMarker = document.createElement('span');
+            abortMarker.className = 'error-text';
+            abortMarker.textContent = '\n⚠ 使用者中止產生\n';
+            outputArea.appendChild(abortMarker);
+            break;
+          }
+          document.getElementById(`status-icon-${i}`).textContent = '\u274C';
+          const errMarker = document.createElement('span');
+          errMarker.className = 'error-text';
+          errMarker.textContent = `\n✗ 錯誤: ${err.message}\n`;
+          outputArea.appendChild(errMarker);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          document.getElementById(`stage-time-${i}`).textContent = `${elapsed}s | 失敗`;
+          const failedRow = document.getElementById(`progress-${i}`);
+          if (failedRow && !failedRow.querySelector('.retry-btn')) {
+            const retryBtn = document.createElement('button');
+            retryBtn.type = 'button';
+            retryBtn.className = 'btn btn-secondary btn-sm retry-btn';
+            retryBtn.textContent = '↻ 重試此階段';
+            retryBtn.onclick = () => startGeneration(i);
+            failedRow.appendChild(retryBtn);
+          }
+          console.error(err);
+          break;
+        }
+      }
+
+      // iOS 版本相容性自動修復：deterministic 掃描 + targeted fix pass，最多迭代 3 次
+      if (isGenerating && Object.keys(generatedFiles).length > 0) {
+        const progressList = document.getElementById('progressList');
+        const MAX_FIX_PASSES = 3;
+        // 用最後一個階段的模型（通常是最強的）來跑修復
+        const fixModel = stages[stages.length - 1]?.model || DEFAULT_MODEL;
+
+        for (let pass = 1; pass <= MAX_FIX_PASSES && isGenerating; pass++) {
+          const violations = scanIOSVersionViolations(generatedFiles, minIOS);
+          if (violations.length === 0) {
+            if (pass === 1) {
+              const okMarker = document.createElement('span');
+              okMarker.className = 'file-marker';
+              okMarker.textContent = `\n✓ iOS ${minIOS} 相容性檢查通過，無違規 API\n`;
+              outputArea.appendChild(okMarker);
+            }
+            break;
+          }
+
+          const passId = `fix-pass-${pass}`;
+          const passRow = document.createElement('div');
+          passRow.className = 'stage-progress';
+          passRow.id = `progress-${passId}`;
+          passRow.innerHTML = `
+            <div class="status-icon" id="status-icon-${passId}"><div class="spinner"></div></div>
+            <div class="stage-label">iOS ${minIOS} 相容性修復 #${pass}（${violations.length} 處違規）</div>
+            <div class="stage-time" id="stage-time-${passId}"></div>
+          `;
+          progressList.appendChild(passRow);
+
+          const fixMarker = document.createElement('span');
+          fixMarker.className = 'stage-marker';
+          fixMarker.textContent = `\n━━━ iOS 相容性修復 Pass #${pass} (${fixModel}) ━━━\n`;
+          outputArea.appendChild(fixMarker);
+
+          // 顯示違規摘要到輸出區
+          const violationSummary = document.createElement('span');
+          violationSummary.className = 'error-text';
+          const summaryLines = violations.slice(0, 10).map(v =>
+            `  ${v.file}:${v.line}  ${v.api} (需 iOS ${v.requiredIOS}+)`
+          );
+          if (violations.length > 10) summaryLines.push(`  ... 還有 ${violations.length - 10} 處`);
+          violationSummary.textContent = `發現違規:\n${summaryLines.join('\n')}\n\n`;
+          outputArea.appendChild(violationSummary);
+
+          const fixStreamSpan = document.createElement('span');
+          outputArea.appendChild(fixStreamSpan);
+
+          const fixStart = Date.now();
+          try {
+            const result = await runIOSVersionFixPass(
+              violations, minIOS, sanitizedName, fixModel,
+              (chunk) => {
+                fixStreamSpan.textContent += chunk;
+                if (!scrollPending) {
+                  scrollPending = true;
+                  requestAnimationFrame(() => {
+                    outputArea.scrollTop = outputArea.scrollHeight;
+                    scrollPending = false;
+                  });
+                }
+              }
+            );
+            const fixElapsed = ((Date.now() - fixStart) / 1000).toFixed(1);
+            document.getElementById(`status-icon-${passId}`).textContent = '✅';
+            document.getElementById(`stage-time-${passId}`).textContent =
+              `${fixElapsed}s | 修復 ${result.fixedCount}/${result.affectedFilesCount} 個檔案`;
+            renderFileTree();
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              document.getElementById(`status-icon-${passId}`).textContent = '⏸️';
+              break;
+            }
+            document.getElementById(`status-icon-${passId}`).textContent = '❌';
+            const fixElapsed = ((Date.now() - fixStart) / 1000).toFixed(1);
+            document.getElementById(`stage-time-${passId}`).textContent = `${fixElapsed}s | 失敗`;
+            const errMarker = document.createElement('span');
+            errMarker.className = 'error-text';
+            errMarker.textContent = `\n✗ 修復失敗: ${err.message}\n`;
+            outputArea.appendChild(errMarker);
+            console.error('iOS fix pass failed:', err);
+            break;
+          }
+        }
+
+        // 最後再掃一次，若仍有殘留違規則警告使用者
+        const remaining = scanIOSVersionViolations(generatedFiles, minIOS);
+        if (remaining.length > 0) {
+          const warnMarker = document.createElement('span');
+          warnMarker.className = 'error-text';
+          const sample = remaining.slice(0, 5).map(v => `  ${v.file}:${v.line} ${v.api}`).join('\n');
+          warnMarker.textContent = `\n⚠ 經過 ${MAX_FIX_PASSES} 次修復仍有 ${remaining.length} 處違規:\n${sample}\n建議手動檢查或提高 minIOS 版本。\n`;
+          outputArea.appendChild(warnMarker);
+        }
+      }
+
+      // Ensure the app has a main entry point
+      ensureEntryPoint(sanitizedName);
+      renderFileTree();
+
+      isGenerating = false;
+      document.getElementById('generateBtn').style.display = '';
+      document.getElementById('stopBtn').style.display = 'none';
+
+      if (Object.keys(generatedFiles).length > 0) {
+        const total = Object.keys(generatedFiles).length;
+        document.getElementById('fileCount').textContent = `共 ${total} 個檔案，已準備好打包下載`;
+        document.getElementById('downloadSection').classList.add('active');
+      }
+    }
+
+    function ensureEntryPoint(sanitizedName) {
+      const minIOS = document.getElementById('minIOS').value;
+      const v = parseFloat(minIOS);
+
+      if (v < 13) {
+        // UIKit: need AppDelegate
+        const hasAppDelegate = Object.keys(generatedFiles).some(f =>
+          f.includes('AppDelegate') && generatedFiles[f].includes('UIApplicationDelegate')
+        );
+        if (!hasAppDelegate) {
+          generatedFiles['AppDelegate.swift'] = `import UIKit
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    var window: UIWindow?
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        window = UIWindow(frame: UIScreen.main.bounds)
+        let vc = ViewController()
+        window?.rootViewController = UINavigationController(rootViewController: vc)
+        window?.makeKeyAndVisible()
+        return true
+    }
+}`;
+          if (!Object.keys(generatedFiles).some(f => f.includes('ViewController.swift'))) {
+            generatedFiles['ViewController.swift'] = `import UIKit
+
+class ViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "${sanitizedName}"
+        view.backgroundColor = .systemBackground
+        let label = UILabel()
+        label.text = "Welcome to ${sanitizedName}"
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
+}`;
+          }
+        }
+      } else if (v < 14) {
+        // iOS 13: SwiftUI via SceneDelegate
+        const hasSceneDelegate = Object.keys(generatedFiles).some(f =>
+          f.includes('SceneDelegate') || (f.includes('AppDelegate') && generatedFiles[f].includes('UIApplicationDelegate'))
+        );
+        if (!hasSceneDelegate) {
+          generatedFiles['AppDelegate.swift'] = `import UIKit
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        return true
+    }
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+    }
+}`;
+          generatedFiles['SceneDelegate.swift'] = `import UIKit
+import SwiftUI
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let windowScene = scene as? UIWindowScene else { return }
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = UIHostingController(rootView: ContentView())
+        self.window = window
+        window.makeKeyAndVisible()
+    }
+}`;
+        }
+        if (!Object.keys(generatedFiles).some(f => f.endsWith('ContentView.swift'))) {
+          generatedFiles['ContentView.swift'] = `import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        NavigationView {
+            Text("Welcome to ${sanitizedName}")
+                .navigationBarTitle("${sanitizedName}")
+        }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}`;
+        }
+      } else {
+        // iOS 14+: @main App protocol
+        const hasEntryPoint = Object.keys(generatedFiles).some(f =>
+          f.endsWith('App.swift') && generatedFiles[f].includes('@main')
+        );
+        if (!hasEntryPoint) {
+          generatedFiles[`${sanitizedName}App.swift`] = `import SwiftUI
+
+@main
+struct ${sanitizedName}App: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}`;
+        }
+        if (!Object.keys(generatedFiles).some(f => f.endsWith('ContentView.swift'))) {
+          const navView = v >= 16 ? 'NavigationStack' : 'NavigationView';
+          const navTitle = v >= 14 ? `.navigationTitle("${sanitizedName}")` : `.navigationBarTitle("${sanitizedName}")`;
+          const preview = v >= 17
+            ? `\n#Preview {\n    ContentView()\n}`
+            : `\nstruct ContentView_Previews: PreviewProvider {\n    static var previews: some View {\n        ContentView()\n    }\n}`;
+          generatedFiles['ContentView.swift'] = `import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        ${navView} {
+            Text("Welcome to ${sanitizedName}")
+                ${navTitle}
+        }
+    }
+}
+${preview}`;
+        }
+      }
+    }
+
+    function stopGeneration() {
+      isGenerating = false;
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+    }
+
+    async function downloadProject() {
+      const appName = document.getElementById('appName').value.trim();
+      const bundleId = document.getElementById('bundleId').value.trim();
+      const minIOS = document.getElementById('minIOS').value;
+      const sanitizedName = getModuleName();
+
+      try {
+        const blob = await createProjectZip(appName, bundleId, minIOS, generatedFiles);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${sanitizedName}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('打包失敗: ' + err.message);
+        console.error(err);
+      }
+    }
+
+    // ===== INIT =====
+    init();
+  </script>
+</body>
+
+</html>
