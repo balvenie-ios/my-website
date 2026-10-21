@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隱私權政策 (Privacy Policy) — 雀神塔防 (Mahjong Battler TD)</title>
+  <meta name="description" content="《雀神塔防 (Mahjong Battler TD)》App Store 隱私權政策說明。" />
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --jade: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+      --border: rgba(245, 158, 11, 0.25);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Hiragino Sans", "Microsoft JhengHei", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 70%);
+      color: var(--text-main);
+      line-height: 1.75;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--gold-light);
+      text-decoration: none;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 0.95rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 0.92rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--gold-light);
+    }
+    .lang-switch {
+      display: flex;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .lang-btn.active {
+      background: var(--gold);
+      color: #0f172a;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      flex: 1;
+      width: 100%;
+    }
+    .policy-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+    h1 {
+      font-size: 1.9rem;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+    }
+    .meta-date {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h2 {
+      font-size: 1.25rem;
+      color: var(--gold-light);
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+    p {
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+    ul {
+      margin: 10px 0 18px 22px;
+      color: var(--text-muted);
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    strong {
+      color: var(--text-main);
+    }
+    .contact-box {
+      margin-top: 28px;
+      padding: 20px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+    }
+    .contact-box a {
+      color: var(--jade);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .contact-box a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 0.88rem;
+    }
+    footer a {
+      color: var(--gold-light);
+      text-decoration: none;
+    }
+    [data-lang] {
+      display: none;
+    }
+    [data-lang].active {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      .policy-card {
+        padding: 24px 18px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-badge">發</span>
+        <span>雀神塔防 Mahjong Battler TD</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">首頁 / Home</a>
+        <a href="support.html">支援服務 / Support</a>
+        <a href="privacy.html" class="active">隱私權政策 / Privacy</a>
+        <div class="lang-switch">
+          <button class="lang-btn active" onclick="setLang('zh')">繁中</button>
+          <button class="lang-btn" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" onclick="setLang('ja')">日本語</button>
+          <button class="lang-btn" onclick="setLang('ko')">한국어</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="policy-card">
+      <!-- 繁體中文 -->
+      <article data-lang="zh" class="active">
+        <h1>隱私權政策 (Privacy Policy)</h1>
+        <div class="meta-date">最後更新日期：2026 年 10 月 21 日 ｜ 適用應用程式：《雀神塔防 (Mahjong Battler TD)》</div>
+
+        <h2>1. 總則與承諾</h2>
+        <p>感謝您遊玩《雀神塔防 (Mahjong Battler TD)》（以下簡稱「本應用程式」）。我們非常重視您的個人隱私權。本隱私權政策旨在說明當您使用本應用程式時，您的資料如何被儲存與受到保護。</p>
+
+        <h2>2. 個人資料的收集與使用</h2>
+        <p>本應用程式為單機策略塔防遊戲，<strong>不會主動收集、儲存、分享或出售您的任何個人識別資訊</strong>（如姓名、電話號碼、實體地址、定位資訊或設備廣告識別碼 IDFA）。您無須註冊任何外部帳號即可完整遊玩本應用程式的所有功能。</p>
+
+        <h2>3. 本機資料儲存與 iCloud 雲端同步</h2>
+        <ul>
+          <li><strong>本機儲存 (Local Storage)：</strong>您的遊戲語言設定、最高守城積分、生涯戰績統計、歷史對戰紀錄與進行中的波次存檔，均透過 Apple 標準的 <code>UserDefaults</code> 儲存於您的個人 iOS 裝置本機中。</li>
+          <li><strong>iCloud 雲端備份與同步 (Apple CloudKit & iCloud Key-Value Storage)：</strong>若您的 iOS 裝置已登入個人 Apple iCloud 帳號，本應用程式會透過 Apple 官方提供的 <strong>CloudKit 私密資料庫 (Private Database)</strong> 與 <strong>iCloud 鍵值儲存空間 (<code>NSUbiquitousKeyValueStore</code>)</strong>，自動備份並跨裝置同步您的最高積分、歷史戰績與中途戰局存檔。</li>
+          <li><strong>資料隔離與安全性：</strong>上述雲端存檔資料完全儲存在您個人的 Apple iCloud 私密空間內，受 Apple 安全加密保護。<strong>開發者或任何第三方均無法讀取、存取或查看您的 iCloud 資料</strong>。若您希望關閉雲端同步，可隨時於 iOS「設定」→「Apple ID」→「iCloud」中關閉本應用程式的 iCloud 權限，或於遊戲內清除戰績與存檔。</li>
+        </ul>
+
+        <h2>4. 第三方服務與廣告追蹤</h2>
+        <ul>
+          <li>本應用程式<strong>未內嵌任何第三方廣告 SDK</strong>，亦不使用任何跨 App 或跨網站追蹤技術（無 IDFA 追蹤）。</li>
+          <li>本應用程式<strong>不包含任何真實金錢賭博、現金投注或虛擬籌碼兌換機制</strong>；遊戲中之麻將牌型僅作為奇幻防禦塔之元素合成規則。</li>
+        </ul>
+
+        <h2>5. 兒童隱私權保護</h2>
+        <p>本應用程式適合所有年齡層（App Store 年齡分級 4+），且不會向任何年齡層的使用者（包含 13 歲以下兒童）收集個人識別資料。</p>
+
+        <h2>6. 隱私權政策之修訂</h2>
+        <p>我們可能會因功能更新或法規要求而修訂本隱私權政策。任何變更將直接發布於本頁面並更新上方之「最後更新日期」。</p>
+
+        <div class="contact-box">
+          <h2>7. 聯絡我們 (Contact Us)</h2>
+          <p>如果您對本隱私權政策或本應用程式的資料處理方式有任何疑問、意見或請求，請透過以下電子郵件與我們聯繫：</p>
+          <p>📧 電子郵件：<a href="mailto:chutienuoc7476@icloud.com">chutienuoc7476@icloud.com</a></p>
+        </div>
+      </article>
+
+      <!-- English -->
+      <article data-lang="en">
+        <h1>Privacy Policy</h1>
+        <div class="meta-date">Last Updated: October 21, 2026 | Application: Mahjong Battler TD (雀神塔防)</div>
+
+        <h2>1. Introduction</h2>
+        <p>Thank you for playing <strong>Mahjong Battler TD</strong> ("the App"). We respect your privacy and are committed to protecting your data. This Privacy Policy explains how your game data is handled when you use the App.</p>
+
+        <h2>2. Personal Data Collection</h2>
+        <p>The App is a single-player strategy tower defense game. <strong>We do not collect, transmit, store on external servers, or sell any personally identifiable information</strong> (such as your name, email address, phone number, physical location, or device advertising identifiers/IDFA). No account registration is required to play.</p>
+
+        <h2>3. Local Storage & Apple iCloud Synchronization</h2>
+        <ul>
+          <li><strong>Local Storage:</strong> Your language preferences, high scores, lifetime defense statistics, match history, and mid-game wave checkpoints are stored locally on your device using Apple's standard <code>UserDefaults</code>.</li>
+          <li><strong>iCloud Sync (CloudKit & Key-Value Storage):</strong> If you are signed into iCloud on your iOS device, the App uses Apple's native <strong>CloudKit Private Database</strong> and <strong>iCloud Key-Value Storage (<code>NSUbiquitousKeyValueStore</code>)</strong> to back up and synchronize your game records and saved checkpoints across your own devices.</li>
+          <li><strong>Privacy & Access Control:</strong> All iCloud game data is stored strictly inside your personal Apple iCloud account. <strong>Neither the developer nor any third party can access, view, or process your personal iCloud data.</strong> You can disable iCloud synchronization at any time via your device's iOS Settings or delete your saved records directly within the App.</li>
+        </ul>
+
+        <h2>4. Third-Party Analytics & Advertising</h2>
+        <ul>
+          <li>The App <strong>does not integrate any third-party advertising SDKs</strong> or third-party tracking tools, and does not track you across other apps or websites.</li>
+          <li>The App <strong>contains no gambling, real-money wagering, or casino mechanics</strong>. Mahjong tile combinations are used purely as crafting recipes for fantasy defense towers.</li>
+        </ul>
+
+        <h2>5. Children's Privacy</h2>
+        <p>The App is rated 4+ and does not knowingly collect any personal information from anyone, including children under the age of 13.</p>
+
+        <h2>6. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date.</p>
+
+        <div class="contact-box">
+          <h2>7. Contact Us</h2>
+          <p>If you have any questions or concerns regarding this Privacy Policy or the App, please contact us at:</p>
+          <p>📧 Email: <a href="mailto:chutienuoc7476@icloud.com">chutienuoc7476@icloud.com</a></p>
+        </div>
+      </article>
+
+      <!-- 日本語 -->
+      <article data-lang="ja">
+        <h1>プライバシーポリシー (Privacy Policy)</h1>
+        <div class="meta-date">最終更新日：2026年10月21日 ｜ 対象アプリ：『雀神タワーディフェンス (Mahjong Battler TD)』</div>
+
+        <h2>1. はじめに</h2>
+        <p>『雀神タワーディフェンス (Mahjong Battler TD)』（以下「本アプリ」）をご利用いただきありがとうございます。当方はユーザーのプライバシーを尊重し、個人情報の保護に努めています。</p>
+
+        <h2>2. 個人情報の収集について</h2>
+        <p>本アプリはシングルプレイ専用の戦略タワーディフェンスゲームであり、<strong>氏名、電話番号、住所、位置情報、広告識別子（IDFA）などの個人を特定できる情報を収集・外部送信・販売することは一切ありません</strong>。</p>
+
+        <h2>3. データの保存と iCloud 同期</h2>
+        <ul>
+          <li><strong>端末内保存：</strong>言語設定、ハイスコア、通算戦績、対戦履歴、および中断セーブデータは、お使いの iOS 端末内の <code>UserDefaults</code> に保存されます。</li>
+          <li><strong>iCloud クラウド同期：</strong>iCloud にサインインしている場合、Apple 公式の <strong>CloudKit プライベートデータベース</strong> および <strong><code>NSUbiquitousKeyValueStore</code></strong> を通じて、ご自身の Apple アカウント内の iCloud に戦績と中断セーブデータが自動バックアップされます。</li>
+          <li><strong>データの安全性：</strong>これらのデータはユーザー個人の iCloud 領域内にのみ保存され、<strong>開発者や第三者がアクセス・閲覧することはできません</strong>。</li>
+        </ul>
+
+        <h2>4. 第三者配信の広告・トラッキングについて</h2>
+        <p>本アプリには<strong>第三者の広告 SDK やトラッキングツールは一切組み込まれていません</strong>。また、本アプリには賭博や現金を賭ける要素は一切含まれておらず、麻雀の役は防衛タワーの合成ルールとしてのみ使用されます。</p>
+
+        <h2>5. お子様のプライバシー</h2>
+        <p>本アプリは全年齢対象（4+）であり、13歳未満のお子様を含むいかなるユーザーからも個人情報を収集しません。</p>
+
+        <div class="contact-box">
+          <h2>6. お問い合わせ先</h2>
+          <p>本プライバシーポリシーに関するご質問やお問い合わせは、以下のメールアドレスまでご連絡ください：</p>
+          <p>📧 メール：<a href="mailto:chutienuoc7476@icloud.com">chutienuoc7476@icloud.com</a></p>
+        </div>
+      </article>
+
+      <!-- 한국어 -->
+      <article data-lang="ko">
+        <h1>개인정보 처리방침 (Privacy Policy)</h1>
+        <div class="meta-date">최종 업데이트: 2026년 10월 21일 ｜ 적용 앱: 《작신 타워 디펜스 (Mahjong Battler TD)》</div>
+
+        <h2>1. 개요</h2>
+        <p>《작신 타워 디펜스 (Mahjong Battler TD)》(이하 "본 앱")를 이용해 주셔서 감사합니다. 당사는 사용자의 개인정보를 소중히 여기며 안전하게 보호하기 위해 최선을 다하고 있습니다.</p>
+
+        <h2>2. 개인정보 수집 여부</h2>
+        <p>본 앱은 싱글 플레이어 전략 타워 디펜스 게임으로, <strong>사용자의 이름, 연락처, 위치 정보, 광고 식별자(IDFA) 등 어떠한 개인 식별 정보도 수집, 외부 서버 전송 또는 제3자에게 판매하지 않습니다.</strong></p>
+
+        <h2>3. 데이터 저장 및 iCloud 동기화</h2>
+        <ul>
+          <li><strong>기기 내 저장:</strong> 언어 설정, 최고 점수, 누적 전적, 전투 기록 및 중간 저장 데이터는 사용자의 iOS 기기 내부(<code>UserDefaults</code>)에 저장됩니다.</li>
+          <li><strong>iCloud 클라우드 동기화:</strong> 기기가 iCloud에 로그인되어 있는 경우, Apple의 공식 <strong>CloudKit 비공개 데이터베이스(Private Database)</strong> 및 <strong><code>NSUbiquitousKeyValueStore</code></strong>를 통해 사용자 본인의 개인 iCloud 계정에 전적 및 저장 데이터가 동기화됩니다.</li>
+          <li><strong>접근 제한:</strong> iCloud에 저장된 데이터는 오직 사용자 본인만 접근할 수 있으며, <strong>개발자나 제3자는 이를 열람하거나 수집할 수 없습니다.</strong></li>
+        </ul>
+
+        <h2>4. 제3자 광고 및 추적</h2>
+        <p>본 앱은 <strong>제3자 광고 SDK나 사용자 추적 도구를 일체 사용하지 않습니다.</strong> 또한 사행성 도박이나 현금 베팅 요소를 포함하지 않으며, 마작 패 조합은 판타지 타워 합성 규칙으로만 사용됩니다.</p>
+
+        <div class="contact-box">
+          <h2>5. 문의처 (Contact Us)</h2>
+          <p>본 개인정보 처리방침에 관한 문의 사항이 있으시면 아래 이메일로 연락해 주시기 바랍니다:</p>
+          <p>📧 이메일: <a href="mailto:chutienuoc7476@icloud.com">chutienuoc7476@icloud.com</a></p>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Mahjong Battler TD (雀神塔防). All Rights Reserved. | Contact: <a href="mailto:chutienuoc7476@icloud.com">chutienuoc7476@icloud.com</a></p>
+  </footer>
+
+  <script>
+    function setLang(lang) {
+      document.querySelectorAll('[data-lang]').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-lang') === lang);
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes("'" + lang + "'"));
+      });
+    }
+  </script>
+</body>
+</html>
